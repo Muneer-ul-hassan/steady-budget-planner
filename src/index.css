@@ -1551,3 +1551,5 @@ ul {
   text-align: center;
 }
 
+
+@media (min-width: 901px) { .app { max-width: 1000px; margin: 0 auto; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.05); } }
