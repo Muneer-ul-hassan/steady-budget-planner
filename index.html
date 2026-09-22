@@ -2,9 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/brand-logo.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/brand-logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-    <title>steady</title>
+    <title>ADHD Planner</title>
+    <script>
+      (function() {
+        try {
+          var savedTitle = localStorage.getItem('budget-planner-title');
+          if (!savedTitle || savedTitle === 'Budget and Planner') {
+            localStorage.setItem('budget-planner-title', 'ADHD Planner');
+          }
+          var p = localStorage.getItem('budget-palette') || 'sage';
+          document.documentElement.setAttribute('data-palette', p);
+          var t = localStorage.getItem('budget-theme') || 'light';
+          if (t === 'dark') document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

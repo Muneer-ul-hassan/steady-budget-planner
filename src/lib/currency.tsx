@@ -5,6 +5,10 @@ import { db, ensureProfile } from './db';
 type CurrencyContextType = {
   currency: string;
   setCurrency: (c: string) => void;
+  currencyPosition: 'left' | 'right';
+  setCurrencyPosition: (p: 'left' | 'right') => void;
+  centsFormat: '.00' | ',00' | 'none';
+  setCentsFormat: (f: '.00' | ',00' | 'none') => void;
   money: (value: number) => string;
   shortMoney: (value: number) => string;
 };
@@ -17,6 +21,22 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       return localStorage.getItem('steady_currency') || '$';
     } catch {
       return '$';
+    }
+  });
+
+  const [currencyPosition, setCurrencyPositionState] = useState<'left' | 'right'>(() => {
+    try {
+      return (localStorage.getItem('steady_currency_position') as 'left' | 'right') || 'left';
+    } catch {
+      return 'left';
+    }
+  });
+
+  const [centsFormat, setCentsFormatState] = useState<'.00' | ',00' | 'none'>(() => {
+    try {
+      return (localStorage.getItem('steady_cents_format') as '.00' | ',00' | 'none') || '.00';
+    } catch {
+      return '.00';
     }
   });
 
@@ -65,22 +85,70 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const formatPrefix = (curr: string) => {
+  const setCurrencyPosition = (pos: 'left' | 'right') => {
+    setCurrencyPositionState(pos);
+    try {
+      localStorage.setItem('steady_currency_position', pos);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const setCentsFormat = (fmt: '.00' | ',00' | 'none') => {
+    setCentsFormatState(fmt);
+    try {
+      localStorage.setItem('steady_cents_format', fmt);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const formatSign = (curr: string) => {
     return curr.length > 1 ? `${curr} ` : curr;
   };
 
   const money = (value: number) => {
     const val = typeof value === 'number' && !isNaN(value) ? value : 0;
-    return `${formatPrefix(currency)}${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const decimals = centsFormat === 'none' ? 0 : 2;
+    let formatted = val.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+
+    if (centsFormat === ',00' && decimals > 0) {
+      // replace last dot with comma
+      const lastDot = formatted.lastIndexOf('.');
+      if (lastDot !== -1) {
+        formatted = formatted.substring(0, lastDot) + ',' + formatted.substring(lastDot + 1);
+      }
+    }
+
+    if (currencyPosition === 'right') {
+      return `${formatted} ${currency}`;
+    }
+    return `${formatSign(currency)}${formatted}`;
   };
 
   const shortMoney = (value: number) => {
     const val = typeof value === 'number' && !isNaN(value) ? value : 0;
-    return `${formatPrefix(currency)}${val.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    const formatted = val.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (currencyPosition === 'right') {
+      return `${formatted} ${currency}`;
+    }
+    return `${formatSign(currency)}${formatted}`;
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, money, shortMoney }}>
+    <CurrencyContext.Provider value={{
+      currency,
+      setCurrency,
+      currencyPosition,
+      setCurrencyPosition,
+      centsFormat,
+      setCentsFormat,
+      money,
+      shortMoney,
+    }}>
       {children}
     </CurrencyContext.Provider>
   );

@@ -33,12 +33,75 @@ export type Screen =
   | 'help';
 export type Mode = 'example' | 'empty' | 'custom';
 export type Spend = { id: number; amount: number; category: string; note: string; date: string };
-export type Goal = { id: number; name: string; saved: number; target: number; monthly: number };
+export type Goal = { id: number; name: string; saved: number; target: number; monthly: number; color?: string };
 export type Bill = { id: number; name: string; amount: number; due: string; paid: boolean };
-export type Income = { id: number; source: string; amount: number; date: string };
-export type Debt = { id: number; name: string; amount: number; minimum: number };
-export type Envelope = { id: number; name: string; budget: number; spent: number };
+export type Income = { id: number; source: string; amount: number; date: string; status?: 'arrived' | 'expected' };
+export type Debt = {
+  id: number;
+  name: string;
+  amount: number;
+  minimum: number;
+  isCreditCard?: boolean;
+  rate?: number;
+  frequency?: string;
+  dueDay?: number;
+};
+export type Envelope = {
+  id: number;
+  name: string;
+  budget: number;
+  spent: number;
+  category?: string;
+  color?: string;
+  colorName?: string;
+};
+
+export type MilestoneStatus = 'reached' | 'not_yet' | 'not_counted';
+
+export interface MilestoneItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  circleLabel: string;
+  status: MilestoneStatus;
+  category?: 'spending' | 'bills' | 'savings' | 'debt' | 'envelopes' | 'habit';
+  detail?: string;
+}
+
 export type LucideIcon = typeof Gauge;
+
+export const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
+export type MonthCode = (typeof MONTHS)[number];
+
+export const MONTH_FULL_NAMES: Record<string, string> = {
+  JAN: 'January',
+  FEB: 'February',
+  MAR: 'March',
+  APR: 'April',
+  MAY: 'May',
+  JUN: 'June',
+  JUL: 'July',
+  AUG: 'August',
+  SEP: 'September',
+  OCT: 'October',
+  NOV: 'November',
+  DEC: 'December',
+};
+
+export const MONTH_INDEX: Record<string, number> = {
+  JAN: 0,
+  FEB: 1,
+  MAR: 2,
+  APR: 3,
+  MAY: 4,
+  JUN: 5,
+  JUL: 6,
+  AUG: 7,
+  SEP: 8,
+  OCT: 9,
+  NOV: 10,
+  DEC: 11,
+};
 
 export const screens: { id: Screen; label: string; icon: LucideIcon }[] = [
   { id: 'today', label: 'Today', icon: Gauge },
@@ -85,3 +148,116 @@ export function money(value: number) {
 export function shortMoney(value: number) {
   return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 }
+
+export type PaletteId = 'sage' | 'nordic' | 'terracotta' | 'plum';
+
+export interface PaletteOption {
+  id: PaletteId;
+  name: string;
+  tag: string;
+  isDefault?: boolean;
+  accent: string;
+  background: string;
+  cards: string;
+  text: string;
+  description: string;
+}
+
+export const PALETTES: PaletteOption[] = [
+  {
+    id: 'sage',
+    name: 'Sage & Linen',
+    tag: 'Nature / Earthy Calm · Etsy Favorite',
+    isDefault: true,
+    accent: '#4A7C59',
+    background: '#F4F6F0',
+    cards: '#FAFBF8',
+    text: '#222E25',
+    description: 'Muted Forest Green on Pale Linen Oat paper. Grounded, organic, and peaceful.',
+  },
+  {
+    id: 'nordic',
+    name: 'Nordic Slate & Teal',
+    tag: 'Clean / Minimalist Studio',
+    accent: '#3B7A8C',
+    background: '#F0F4F5',
+    cards: '#FAFCFC',
+    text: '#1F2D33',
+    description: 'Deep Seafoam Teal over Cool Mist. Clean, architectural, and distraction-free.',
+  },
+  {
+    id: 'terracotta',
+    name: 'Warm Terracotta & Sand',
+    tag: 'Warm / Cozy Paper',
+    accent: '#B86B52',
+    background: '#F8F4EE',
+    cards: '#FDFBF7',
+    text: '#342A27',
+    description: 'Muted Warm Terracotta on Warm Sand. Soft like aged journal paper.',
+  },
+  {
+    id: 'plum',
+    name: 'Plum & Cashmere',
+    tag: 'Heather Plum / Soft Mist',
+    accent: '#5B507A',
+    background: '#F5F3F7',
+    cards: '#FCFBFD',
+    text: '#2B2533',
+    description: 'Deep Heather Plum on Cashmere Mist. Gentle, elegant, and calm.',
+  },
+];
+
+export interface AppSettings {
+  userName: string;
+  plannerTitle: string;
+  currencySymbol: string;
+  currencyPosition: 'left' | 'right';
+  centsFormat: '.00' | ',00' | 'none';
+  categories: string[];
+  payFrequency: 'once_a_month' | 'more_than_once';
+  payDayDescription: string;
+  nextPayDate: string;
+  splitBillsHalf: boolean;
+  featureVisibility: 'simple' | 'everything';
+  bigNumberTitle: 'safe' | 'remaining' | 'left';
+  showTodayBalance: 'off' | 'show';
+  autoBackupEnabled: boolean;
+  recoveryLockEnabled: boolean;
+  palette?: PaletteId;
+}
+
+export const defaultSettings: AppSettings = {
+  userName: 'Alex',
+  plannerTitle: 'ADHD Planner',
+  currencySymbol: '$',
+  currencyPosition: 'left',
+  centsFormat: '.00',
+  categories: ['Coffee', 'Food', 'Groceries', 'Gas', 'Transit', 'Fun', 'Other'],
+  payFrequency: 'once_a_month',
+  payDayDescription: '20th of the month',
+  nextPayDate: '2026-10-20',
+  splitBillsHalf: false,
+  featureVisibility: 'everything',
+  bigNumberTitle: 'safe',
+  showTodayBalance: 'off',
+  autoBackupEnabled: true,
+  recoveryLockEnabled: false,
+  palette: 'sage',
+};
+
+export interface PlannerProfile {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
+export interface SyncSession {
+  code: string;
+  cleanCode: string;
+  checkNumber: string;
+  expiresAt: number;
+  status: 'waiting' | 'detected' | 'connected' | 'expired';
+}
+

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowDownToLine, CalendarDays, Check, ChevronRight, CircleHelp, Flag, Gauge, Keyboard, ListChecks, MoreHorizontal, Plus, RotateCcw, Settings2, Target, Wallet, X } from "lucide-react";
-import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens } from "../types";
+import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens, MonthCode, MONTH_FULL_NAMES } from "../types";
 import { useTranslation } from "../lib/i18n";
 import { useCurrency } from "../lib/currency";
 
@@ -159,10 +159,10 @@ export function SpendPanel({
         <h3 className="card-title" id="log-h">
           Log a spend
         </h3>
-        <span className="card-meta">{spends.length} logged today</span>
+        <span className="card-meta">{spends.length} Logged today</span>
       </div>
       <div className="spend-total num">{money(total)}</div>
-      <p className="spend-hint">type the exact amount or use the quick keys</p>
+      <p className="spend-hint">Type the exact amount or use the quick keys</p>
       <div className="field">
         <label htmlFor="log-exact">Exact amount</label>
         <input
@@ -186,7 +186,7 @@ export function SpendPanel({
       </div>
       
       {isEditingCategories ? (
-        <div style={{ marginTop: 12, padding: 8, background: 'var(--sub)', borderRadius: 8 }}>
+        <div style={{ marginTop: 12, padding: 8, background: 'var(--lav)', border: '1px solid var(--line)', borderRadius: 8 }}>
           <div style={{ marginBottom: 8, display: 'flex', gap: 4 }}>
             <input className="input" style={{ flex: 1 }} value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="New category..." />
             <button className="btn btn-primary" style={{ padding: '0 8px' }} onClick={addCategory}>Add</button>
@@ -195,7 +195,7 @@ export function SpendPanel({
             {categories.map(([label, tone], i) => (
               <span key={i} className={`chip ${tone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 {label}
-                <button className="text-button" style={{ opacity: 0.5, padding: 0 }} onClick={() => removeCategory(i)}>×</button>
+                <button className="text-button" style={{ opacity: 0.8, padding: 0 }} onClick={() => removeCategory(i)}>×</button>
               </span>
             ))}
           </div>
@@ -230,23 +230,23 @@ export function SpendPanel({
       </div>
       <div className="field">
         <label htmlFor="log-note">
-          Note <span>optional</span>
+          Note <span>Optional</span>
         </label>
         <input
           id="log-note"
           className="input"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="coffee with Sam, train home…"
+          placeholder="Coffee with Sam, train home…"
         />
       </div>
       <button className="btn btn-primary btn-block" onClick={submit} disabled={total <= 0}>
-        Add to today
+        Add to Today
       </button>
       <button className="btn btn-ghost btn-block" onClick={() => setAmount('')}>
         Close
       </button>
-      <p className="spend-hint">quick when you want it, exact when you need it</p>
+      <p className="spend-hint">Quick when you want it, exact when you need it</p>
     </section>
   );
 }
@@ -282,25 +282,44 @@ export function Sidebar({
   spends,
   goals,
   onAdd,
+  plannerTitle = 'ADHD Planner',
+  userName = 'Alex',
+  featureVisibility = 'everything',
 }: {
   active: Screen;
   setActive: (s: Screen) => void;
   spends: Spend[];
   goals: Goal[];
   onAdd: (s: Omit<Spend, 'id'>) => void;
+  plannerTitle?: string;
+  userName?: string;
+  featureVisibility?: 'simple' | 'everything';
 }) {
   const { t } = useTranslation();
   const { currency, money, shortMoney } = useCurrency();
+  const brandWords = (plannerTitle || 'ADHD Planner').split(' ');
+  const brandFirst = brandWords[0] || 'ADHD';
+  const brandRest = brandWords.slice(1).join(' ') || 'Planner';
+
+  const visibleScreens = screens.filter(({ id }) => {
+    if (featureVisibility === 'simple') {
+      return ['today', 'month', 'mustpays', 'income', 'settings'].includes(id);
+    }
+    return true;
+  });
+
   return (
     <aside className="sidebar" aria-label="Tools and goals">
       <div className="brand">
-        <span className="brand-mark">B</span>
+        <span className="brand-mark" title={plannerTitle || 'Steady Budget'}>
+          <img src="/brand-logo.png" alt="Brand Logo" className="brand-logo-img" />
+        </span>
         <span className="brand-name">
-          Budget and
-          <br />{t('Planner')}</span>
+          {brandFirst}
+          <br />{brandRest}</span>
       </div>
       <nav className="nav" aria-label="Screens">
-        {screens.map(({ id, label, icon: NavIcon }) => (
+        {visibleScreens.map(({ id, label, icon: NavIcon }) => (
           <button
             key={id}
             className={`nav-item ${active === id ? 'active' : ''}`}
@@ -324,9 +343,9 @@ export function Sidebar({
       <div className="user">
         <span className="user-avatar" />
         <span>
-          <span className="user-name">Your planner</span>
-          <span className="user-plan">Budget and Planner</span>
-          <span className="card-meta">lifetime licence · no account</span>
+          <span className="user-name">{userName || 'Your planner'}</span>
+          <span className="user-plan">{plannerTitle || 'ADHD Planner'}</span>
+          <span className="card-meta">Lifetime licence · No account</span>
         </span>
       </div>
     </aside>
@@ -336,12 +355,28 @@ export function Sidebar({
 
 export function Topbar({
   screen,
+  month = 'SEP',
+  incomeCount,
+  latestIncomeDate,
+  goalsCount,
+  debtsCount,
+  envelopesCount,
+  milestoneFilter = 'all',
+  onMilestoneFilterChange,
   onCommand,
   onLog,
   onHelp,
   onSettings,
 }: {
   screen: Screen;
+  month?: MonthCode;
+  incomeCount?: number;
+  latestIncomeDate?: string;
+  goalsCount?: number;
+  debtsCount?: number;
+  envelopesCount?: number;
+  milestoneFilter?: 'all' | 'reached' | 'not_yet';
+  onMilestoneFilterChange?: (filter: 'all' | 'reached' | 'not_yet') => void;
   onCommand: () => void;
   onLog: () => void;
   onHelp: () => void;
@@ -349,36 +384,91 @@ export function Topbar({
 }) {
   const { t } = useTranslation();
   const { currency, money, shortMoney } = useCurrency();
+  const fullMonth = MONTH_FULL_NAMES[month] || 'September';
+
+  // Dynamic date & greeting
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dayName = now.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
+  const dayNum = now.getDate();
+  const monthName = now.toLocaleDateString('en-GB', { month: 'long' }).toUpperCase();
+  const todayEyebrow = `${dayName}, ${dayNum} ${monthName}`;
+
   const titleMap: Record<Screen, string> = {
-    today: 'Good afternoon',
-    month: 'September 2026',
-    mustpays: 'Bills & rent',
-    income: 'Your money',
-    goals: 'Your goals',
-    debt: 'Paying it down',
-    envelopes: 'Envelopes',
-    milestones: 'Milestones',
-    settings: 'Settings',
-    help: 'How this planner works',
-  };
-  const eyebrowMap: Record<Screen, string> = {
-    today: 'MONDAY, 21 SEPTEMBER',
-    month: 'The month',
+    today: greeting,
+    month: `${fullMonth} 2026`,
     mustpays: 'Every bill you owe',
-    income: 'Everything that came in',
+    income: 'Everything else that turned up',
     goals: 'What you are saving for',
     debt: 'Paying it down',
     envelopes: 'What each kind of spending gets',
     milestones: 'Things that already happened',
-    settings: 'Make it yours',
+    settings: 'How this works',
     help: 'How this planner works',
+  };
+  const eyebrowMap: Record<Screen, string> = {
+    today: todayEyebrow,
+    month: `The month · ${month}`,
+    mustpays: 'BILLS',
+    income: 'MONEY IN',
+    goals: 'GOALS',
+    debt: 'DEBT',
+    envelopes: 'ENVELOPES',
+    milestones: 'MILESTONES',
+    settings: 'SETTINGS',
+    help: 'How this planner works',
+  };
+  const subMap: Partial<Record<Screen, string>> = {
+    today: 'ADHD Planner',
+    month: `${fullMonth} 2026 planner & calendar`,
+    mustpays: 'no bills yet',
+    income: incomeCount !== undefined
+      ? (incomeCount === 0 ? 'no extra money put down yet' : `${incomeCount} thing${incomeCount === 1 ? '' : 's'} put down · newest ${latestIncomeDate || 'recently'}`)
+      : 'no extra money put down yet',
+    goals: goalsCount !== undefined
+      ? (goalsCount === 0 ? 'nothing on the list yet' : `${goalsCount} goal${goalsCount === 1 ? '' : 's'} on the list`)
+      : 'nothing on the list yet',
+    debt: debtsCount !== undefined
+      ? (debtsCount === 0 ? 'nothing owed on this file yet' : `${debtsCount} debt${debtsCount === 1 ? '' : 's'} on this file`)
+      : 'nothing owed on this file yet',
+    envelopes: envelopesCount !== undefined
+      ? (envelopesCount === 0 ? 'nothing capped yet' : `${envelopesCount} envelope${envelopesCount === 1 ? '' : 's'} capped`)
+      : 'nothing capped yet',
+    milestones: 'worked out from what is already in the file',
+    settings: 'saved on this device · lifetime licence · no account',
   };
   return (
     <header className="topbar">
       <div>
         <p className="eyebrow">{eyebrowMap[screen]}</p>
-        <h1 className="screen-title">{titleMap[screen]}</h1>
-        <p className="screen-sub">{screen === 'today' ? 'Budget and Planner' : screen === 'month' ? 'in progress · 10 days to payday' : ''}</p>
+        <h1 className="screen-title">
+          {titleMap[screen]}
+          {screen === 'mustpays' && (
+            <InfoBadge text="A list of all your recurring bills and must-pays. Check them off as you pay them to update your safe-to-spend balance." />
+          )}
+          {screen === 'income' && (
+            <InfoBadge text="Track one-off and unexpected money, like tax refunds, gifts, or side income." />
+          )}
+          {screen === 'goals' && (
+            <InfoBadge text="Money you are setting aside for the future. You can put money into these at any time." />
+          )}
+          {screen === 'debt' && (
+            <InfoBadge text="Track what you owe, set up payoff amounts, and keep payments on track." />
+          )}
+          {screen === 'envelopes' && (
+            <InfoBadge text="An envelope is a cap on one kind of spending. It helps you keep an eye on your pace without locking money away." />
+          )}
+          {screen === 'milestones' && (
+            <InfoBadge text="Things that already happened, worked out from what is already in the file — nothing here to fill in." />
+          )}
+          {screen === 'settings' && (
+            <InfoBadge text="Manage your preferences, data backups, currency, payday schedule, and categories." />
+          )}
+        </h1>
+        <p className="screen-sub">
+          {subMap[screen] || ''}
+        </p>
       </div>
       <div className="topbar-actions">
         <button className="btn btn-ghost command-launch" onClick={onCommand} aria-label="Quick actions — Ctrl K">
@@ -386,16 +476,38 @@ export function Topbar({
           <span>Quick actions</span>
           <span className="kbd">Ctrl K</span>
         </button>
-        <button className="help-toggle" onClick={onSettings} aria-label="Settings">
-          <Settings2 size={16} />
-        </button>
         <button className="help-toggle" onClick={onHelp} aria-label="Toggle help">
           <CircleHelp size={16} />
-          <span className="help-toggle-label">{t('Help')}</span>
         </button>
-        <button className="btn btn-primary" onClick={onLog}>
-          Log a spend
-        </button>
+        {screen === 'milestones' ? (
+          <div className="milestones-topbar-filter-group" role="tablist" aria-label="Milestone filter">
+            <button
+              type="button"
+              className={`milestones-topbar-pill ${milestoneFilter === 'all' ? 'active' : ''}`}
+              onClick={() => onMilestoneFilterChange?.('all')}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              className={`milestones-topbar-pill ${milestoneFilter === 'reached' ? 'active' : ''}`}
+              onClick={() => onMilestoneFilterChange?.('reached')}
+            >
+              Reached
+            </button>
+            <button
+              type="button"
+              className={`milestones-topbar-pill ${milestoneFilter === 'not_yet' ? 'active' : ''}`}
+              onClick={() => onMilestoneFilterChange?.('not_yet')}
+            >
+              Not yet
+            </button>
+          </div>
+        ) : screen === 'settings' ? null : (
+          <button className="btn btn-primary" onClick={onLog}>
+            {screen === 'mustpays' ? 'Add a bill' : screen === 'income' ? 'Record money in' : screen === 'goals' ? 'Add a goal' : screen === 'debt' ? 'Add a debt' : screen === 'envelopes' ? 'Add an envelope' : 'Log a spend'}
+          </button>
+        )}
       </div>
     </header>
   );
