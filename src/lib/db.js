@@ -23,10 +23,11 @@ db.version(1).stores({
 export async function ensureProfile() {
   const profiles = await db.profile.toArray();
   if (profiles.length === 0) {
+    const savedCurrency = (typeof localStorage !== 'undefined' && localStorage.getItem('steady_currency')) || '$';
     await db.profile.add({
       name: 'User',
       title: 'My calm money plan',
-      currency: '$',
+      currency: savedCurrency,
       language: 'en',
       bigLabel: 'Safe to spend today',
       theme: 'soft-spectrum',

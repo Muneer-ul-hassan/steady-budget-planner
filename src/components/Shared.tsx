@@ -177,7 +177,7 @@ export function SpendPanel({
       <div className="key-row">
         {[1, 5, 10, 20].map((n) => (
           <button className="key num" onClick={() => add(n)} key={n}>
-            +${n}
+            +{currency}{n}
           </button>
         ))}
         <button className="key key-reset" onClick={() => setAmount('')} aria-label="Clear the amount">
@@ -336,16 +336,12 @@ export function Sidebar({
 
 export function Topbar({
   screen,
-  focus,
-  setFocus,
   onCommand,
   onLog,
   onHelp,
   onSettings,
 }: {
   screen: Screen;
-  focus: boolean;
-  setFocus: (v: boolean) => void;
   onCommand: () => void;
   onLog: () => void;
   onHelp: () => void;
@@ -396,10 +392,6 @@ export function Topbar({
         <button className="help-toggle" onClick={onHelp} aria-label="Toggle help">
           <CircleHelp size={16} />
           <span className="help-toggle-label">{t('Help')}</span>
-        </button>
-        <button className={`focus-toggle ${focus ? 'focus-on' : ''}`} onClick={() => setFocus(!focus)}>
-          <span className="focus-knob" />
-          <span>Focus mode</span>
         </button>
         <button className="btn btn-primary" onClick={onLog}>
           Log a spend

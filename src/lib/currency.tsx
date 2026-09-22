@@ -1,6 +1,6 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from './db';
+import { db, ensureProfile } from './db';
 
 type CurrencyContextType = {
   currency: string;
@@ -12,22 +12,71 @@ type CurrencyContextType = {
 const CurrencyContext = createContext<CurrencyContextType | null>(null);
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const profile = useLiveQuery(() => db.profile.toCollection().first());
-  
-  const currency = profile?.currency || '$';
+  const [currency, setCurrencyState] = useState<string>(() => {
+    try {
+      return localStorage.getItem('steady_currency') || '$';
+    } catch {
+      return '$';
+    }
+  });
 
-  const setCurrency = (newCurrency: string) => {
-    if (profile?.id) {
-      db.profile.update(profile.id, { currency: newCurrency });
+  const profile = useLiveQuery(() => db.profile.toCollection().first());
+
+  useEffect(() => {
+    ensureProfile();
+  }, []);
+
+  useEffect(() => {
+    if (profile?.currency && profile.currency !== currency) {
+      setCurrencyState(profile.currency);
+      try {
+        localStorage.setItem('steady_currency', profile.currency);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [profile?.currency]);
+
+  const setCurrency = async (newCurrency: string) => {
+    setCurrencyState(newCurrency);
+    try {
+      localStorage.setItem('steady_currency', newCurrency);
+    } catch (e) {
+      console.error(e);
+    }
+
+    try {
+      const all = await db.profile.toArray();
+      if (all.length > 0) {
+        await db.profile.update(all[0].id, { currency: newCurrency });
+      } else {
+        await db.profile.add({
+          name: 'User',
+          title: 'My calm money plan',
+          currency: newCurrency,
+          language: 'en',
+          bigLabel: 'Safe to spend today',
+          theme: 'soft-spectrum',
+          alreadySetAside: 0
+        });
+      }
+    } catch (err) {
+      console.error('Failed to update currency in db', err);
     }
   };
 
+  const formatPrefix = (curr: string) => {
+    return curr.length > 1 ? `${curr} ` : curr;
+  };
+
   const money = (value: number) => {
-    return `${currency}${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const val = typeof value === 'number' && !isNaN(value) ? value : 0;
+    return `${formatPrefix(currency)}${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const shortMoney = (value: number) => {
-    return `${currency}${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+    const val = typeof value === 'number' && !isNaN(value) ? value : 0;
+    return `${formatPrefix(currency)}${val.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
   };
 
   return (
@@ -44,3 +93,4 @@ export function useCurrency() {
   }
   return context;
 }
+

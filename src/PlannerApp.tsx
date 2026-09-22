@@ -12,7 +12,6 @@ export default function PlannerApp() {
   const { t } = useTranslation();
   const { currency, money, shortMoney } = useCurrency();
   const [active, setActive] = useState<Screen>('today');
-  const [focus, setFocus] = useState(false);
   const [command, setCommand] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [helpOn, setHelpOn] = useState(() => readStorage('budget-help-visible', true));
@@ -109,14 +108,12 @@ export default function PlannerApp() {
 
   return (
     <>
-      {showBanner && mode === 'example' && <SeedBanner onEmpty={startEmpty} onKeep={() => setShowBanner(false)} onExisting={() => { setShowBanner(false); setActive('settings'); }} />}
-      <div className={`app ${focus ? 'focus-mode' : ''}`}>
+      <div className="app">
+        {showBanner && mode === 'example' && <SeedBanner onEmpty={startEmpty} onKeep={() => setShowBanner(false)} onExisting={() => { setShowBanner(false); setActive('settings'); }} />}
         <Sidebar active={active} setActive={setActive} spends={spends} goals={goals} onAdd={addSpend} />
         <main className="main">
           <Topbar
             screen={active}
-            focus={focus}
-            setFocus={setFocus}
             onCommand={() => setCommand(true)}
             onLog={() => setLogOpen(true)}
             onHelp={() => setActive('help')}
