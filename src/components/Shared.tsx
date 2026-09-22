@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowDownToLine, CalendarDays, Check, ChevronRight, CircleHelp, Flag, Gauge, Keyboard, ListChecks, MoreHorizontal, Plus, RotateCcw, Settings2, Target, Wallet, X } from "lucide-react";
-import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, money, shortMoney, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens } from "../types";
+import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens } from "../types";
 
 export function InfoBadge({ text }: { text?: string }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const [open, setOpen] = useState(false);
   if (!text) return null;
   return (
@@ -65,9 +67,7 @@ export function SeedBanner({
         <button className="btn btn-primary" onClick={onKeep}>
           Keep exploring the example
         </button>
-        <button className="btn btn-ghost" onClick={onEmpty}>
-          Start with an empty file
-        </button>
+        <button className="btn btn-ghost" onClick={onEmpty}>{t('Start with an empty file')}</button>
         <button className="btn btn-ghost seed-return" onClick={onExisting}>
           I already have a planner⌄
         </button>
@@ -244,6 +244,8 @@ export function SpendPanel({
 
 
 export function GoalMini({ goal }: { goal: Goal }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const pct = goal.target ? Math.min(100, Math.round((goal.saved / goal.target) * 100)) : 0;
   return (
     <div className="goal">
@@ -284,9 +286,7 @@ export function Sidebar({
         <span className="brand-mark">B</span>
         <span className="brand-name">
           Budget and
-          <br />
-          Planner
-        </span>
+          <br />{t('Planner')}</span>
       </div>
       <nav className="nav" aria-label="Screens">
         {screens.map(({ id, label, icon: NavIcon }) => (
@@ -300,9 +300,7 @@ export function Sidebar({
           </button>
         ))}
         <button className={`nav-item ${active === 'help' ? 'active' : ''}`} onClick={() => setActive('help')}>
-          <MoreHorizontal size={15} />
-          Help
-        </button>
+          <MoreHorizontal size={15} />{t('Help')}</button>
       </nav>
       <SpendPanel spends={spends} onAdd={onAdd} />
       <section className="goals-side">
@@ -384,7 +382,7 @@ export function Topbar({
         </button>
         <button className="help-toggle" onClick={onHelp} aria-label="Toggle help">
           <CircleHelp size={16} />
-          <span className="help-toggle-label">Help</span>
+          <span className="help-toggle-label">{t('Help')}</span>
         </button>
         <button className={`focus-toggle ${focus ? 'focus-on' : ''}`} onClick={() => setFocus(!focus)}>
           <span className="focus-knob" />
@@ -426,7 +424,7 @@ export function AddModal({ type, onClose, onSubmit }: { type: 'bill' | 'income' 
   const submit = () => {
     if (name.trim() && Number(amount) > 0) onSubmit(name.trim(), Number(amount), Number(extra) || 0);
   };
-  return <div className="modal-scrim" onClick={onClose}><div className="modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>{title}</h2><IconButton label="Close" onClick={onClose}><X /></IconButton></div><div className="modal-form"><label>{nameLabel}<input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'income' ? 'Salary' : 'Rent'} /></label><label>How much?<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" /></label>{type === 'debt' && <label>Minimum payment<input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="0.00" inputMode="decimal" /></label>}</div><div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={submit}>Add it</button></div></div></div>;
+  return <div className="modal-scrim" onClick={onClose}><div className="modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>{title}</h2><IconButton label="Close" onClick={onClose}><X /></IconButton></div><div className="modal-form"><label>{nameLabel}<input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'income' ? 'Salary' : 'Rent'} /></label><label>How much?<input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" /></label>{type === 'debt' && <label>{t('Minimum payment')}<input value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="0.00" inputMode="decimal" /></label>}</div><div className="modal-actions"><button className="btn btn-ghost" onClick={onClose}>Close</button><button className="btn btn-primary" onClick={submit}>Add it</button></div></div></div>;
 }
 
 

@@ -27,6 +27,7 @@ export async function ensureProfile() {
       name: 'User',
       title: 'My calm money plan',
       currency: '$',
+      language: 'en',
       bigLabel: 'Safe to spend today',
       theme: 'soft-spectrum',
       alreadySetAside: 0

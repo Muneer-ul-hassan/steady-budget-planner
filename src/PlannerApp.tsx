@@ -2,11 +2,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Target, MoreHorizontal } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./lib/db";
-import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, money, shortMoney, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens, readStorage } from "./types";
+import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens, readStorage } from "./types";
 import { InfoBadge, IconButton, SeedBanner, SpendPanel, GoalMini, Sidebar, Topbar, RightNow, AddModal, CommandBar } from "./components/Shared";
 import { Today, Month, Bills, Goals, Income as IncomeScreen, Debt as DebtScreen, Envelopes as EnvelopesScreen, Milestones, Settings, Help } from "./components/Screens";
 
 export default function PlannerApp() {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const [active, setActive] = useState<Screen>('today');
   const [focus, setFocus] = useState(false);
   const [command, setCommand] = useState(false);
