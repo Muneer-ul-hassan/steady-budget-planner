@@ -37,28 +37,33 @@ export default function PlannerApp() {
     return () => window.removeEventListener('keydown', f);
   }, []);
 
-  const startEmpty = () => {
+  const startEmpty = async () => {
     setMode('empty');
     setShowBanner(false);
     setStartingBalanceState(0);
-    db.spends.clear();
-    db.goals.clear();
-    db.bills.clear();
-    db.income.clear();
-    db.debts.clear();
-    db.envelopes.clear();
+    await Promise.all([
+      db.spends.clear(),
+      db.goals.clear(),
+      db.bills.clear(),
+      db.income.clear(),
+      db.debts.clear(),
+      db.envelopes.clear()
+    ]);
     setActive('today');
   };
-  const restoreExample = () => {
+  
+  const restoreExample = async () => {
     setMode('example');
     setShowBanner(false);
     setStartingBalanceState(1319);
-    db.spends.clear();
-    db.goals.clear().then(() => db.goals.bulkAdd(exampleGoals as any[]));
-    db.bills.clear().then(() => db.bills.bulkAdd(exampleBills as any[]));
-    db.income.clear().then(() => db.income.bulkAdd(exampleIncome as any[]));
-    db.debts.clear();
-    db.envelopes.clear().then(() => db.envelopes.bulkAdd(exampleEnvelopes as any[]));
+    await Promise.all([
+      db.spends.clear(),
+      db.debts.clear(),
+      db.goals.clear().then(() => db.goals.bulkAdd(exampleGoals as any[])),
+      db.bills.clear().then(() => db.bills.bulkAdd(exampleBills as any[])),
+      db.income.clear().then(() => db.income.bulkAdd(exampleIncome as any[])),
+      db.envelopes.clear().then(() => db.envelopes.bulkAdd(exampleEnvelopes as any[]))
+    ]);
     setActive('today');
   };
   const setStartingBalance = (value: number) => {
