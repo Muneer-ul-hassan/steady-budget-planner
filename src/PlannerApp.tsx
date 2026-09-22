@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, Target } from "lucide-react";
+import { Plus, X, Target, MoreHorizontal } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./lib/db";
 import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, money, shortMoney, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens, readStorage } from "./types";
@@ -13,6 +13,7 @@ export default function PlannerApp() {
   const [logOpen, setLogOpen] = useState(false);
   const [helpOn, setHelpOn] = useState(true);
   const [modalType, setModalType] = useState<'bill' | 'income' | 'debt' | 'envelope' | null>(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(() => readStorage('budget-mode', 'example'));
   const [showBanner, setShowBanner] = useState(() => readStorage('budget-banner-visible', true));
   const [completed, setCompleted] = useState(true);
@@ -123,7 +124,37 @@ export default function PlannerApp() {
         <aside className="month-rail">{['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'].map((month) => <button key={month} className={`month-tab ${month === 'SEP' ? 'active' : ''}`} onClick={() => setActive('month')}>{month}</button>)}</aside>
       </div>
       <button className="fab" onClick={() => setLogOpen(true)}><Plus size={15} />Log a spend</button>
-      <nav className="mobile-nav">{screens.map(({ id, label, icon: NavIcon }) => <button key={id} className={active === id ? 'active' : ''} onClick={() => setActive(id)}><NavIcon />{label}</button>)}</nav>
+      
+      <nav className="mobile-nav">
+        {screens.slice(0, 4).map(({ id, label, icon: NavIcon }) => (
+          <button key={id} className={active === id ? 'active' : ''} onClick={() => setActive(id)}><NavIcon />{label}</button>
+        ))}
+        <button onClick={() => setMobileMenu(true)}><MoreHorizontal />Menu</button>
+      </nav>
+
+      {mobileMenu && (
+        <div className="modal-scrim" onClick={() => setMobileMenu(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head">
+              <h2>Menu</h2>
+              <IconButton label="Close" onClick={() => setMobileMenu(false)}><X /></IconButton>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, padding: '16px 0' }}>
+              {screens.map(({ id, label, icon: NavIcon }) => (
+                <button
+                  key={id}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, background: 'transparent', color: active === id ? 'var(--purple)' : 'var(--text-h)', fontWeight: active === id ? 'bold' : 'normal' }}
+                  onClick={() => { setActive(id); setMobileMenu(false); }}
+                >
+                  <NavIcon size={24} />
+                  <span style={{ fontSize: 11 }}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {logOpen && <div className="modal-scrim" onClick={() => setLogOpen(false)}><div className="modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>Log a spend</h2><IconButton label="Close" onClick={() => setLogOpen(false)}><X /></IconButton></div><SpendPanel spends={spends} onAdd={(s) => { addSpend(s); setLogOpen(false); }} /></div></div>}
       {modalType && <AddModal type={modalType} onClose={() => setModalType(null)} onSubmit={modalSubmit} />}
       {command && <CommandBar onClose={() => setCommand(false)} setScreen={setActive} onSpend={(amount, category) => addSpend({ amount, category, note: '', date: '2026-09-21' })} />}
