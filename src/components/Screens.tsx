@@ -360,6 +360,8 @@ export function Bills({
 
 
 export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; setGoals: (g: Goal[]) => void; emptyMode: boolean; onHelp: () => void }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
@@ -393,23 +395,31 @@ export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; s
 
 
 export function Income({ income, emptyMode, onAdd, onRemove }: { income: Income[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const total = income.reduce((sum, item) => sum + item.amount, 0);
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Everything that came in')}<InfoBadge text="Log all your income here, like your salary or unexpected cash." /></h2><span className="card-meta">{t('This month')}</span></div>{income.length === 0 ? <div className="empty-state"><strong>{t('No money in yet')}</strong><span>{t('Starting at zero is okay. Add income when it arrives.')}</span></div> : income.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.source}</span><span className="list-detail">{item.date}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Put down money in')}</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">{t('Came in')}</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{income.length ? `${income.length} source${income.length === 1 ? '' : 's'}` : 'nothing added yet'}</p></section><section className="card small-card"><h2 className="eyebrow">{t('Still to come')}</h2><div className="metric">{money(0)}</div><p>{t('No future income added')}</p></section></div></div>;
 }
 
 
 export function Debt({ debts, emptyMode, onAdd, onRemove }: { debts: Debt[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const total = debts.reduce((sum, item) => sum + item.amount, 0);
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Paying it down')}<InfoBadge text="Track your debts here. Enter the minimum payments to make sure they are accounted for in your budget." /></h2><span className="card-meta">{t('one step at a time')}</span></div>{debts.length === 0 ? <div className="empty-state"><strong>{t('Nothing owed on this file')}</strong><span>{t('If you have debt, add it here and keep the next step visible.')}</span></div> : debts.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">Minimum payment {money(item.minimum)}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Add a debt')}</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">{t('Still owed')}</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{debts.length ? 'across your debts' : 'nothing owed on this file'}</p></section><section className="card small-card"><h2 className="eyebrow">{t('Which one first?')}</h2><div className="metric">{debts.length ? debts[0].name : '—'}</div><p>{t('the next small step')}</p></section></div></div>;
 }
 
 
 export function Envelopes({ envelopes, emptyMode, onAdd, onRemove }: { envelopes: Envelope[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Every envelope')}<InfoBadge text="Assign budgets to different categories of spending. This does not take money out of your 'safe to spend'—it just tracks where it's going." /></h2><span className="card-meta">{t('your kinds of spending')}</span></div>{envelopes.length === 0 ? <div className="empty-state"><strong>{t('No envelopes yet')}</strong><span>{t('Create a simple home for the spending you want to notice.')}</span></div> : envelopes.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">{money(Math.max(0, item.budget - item.spent))} left of {money(item.budget)}</span></span><span><span className="list-value">{money(item.budget)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Add an envelope')}</button></section><section className="card section-wide"><h2 className="eyebrow">{t('The rule')}</h2><p className="long-copy">{emptyMode ? 'Everything you log can be assigned later. You do not need to decide the perfect categories today.' : 'Tap a kind to move it to the other side. The envelopes are only here to help the money feel less abstract.'}</p></section></div>;
 }
 
 
 export function Milestones({ bills, spends, goals, emptyMode, startingBalance, onHelp }: { bills: Bill[]; spends: Spend[]; goals: Goal[]; emptyMode: boolean; startingBalance: number; onHelp: () => void }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   // Compute dynamic milestone logic
   const allBillsPaid = bills.length > 0 && bills.every(b => b.paid);
   
