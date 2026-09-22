@@ -6,7 +6,7 @@ import { useCurrency } from "../lib/currency";
 
 export function InfoBadge({ text }: { text?: string }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const [open, setOpen] = useState(false);
   if (!text) return null;
   return (
@@ -250,7 +250,7 @@ export function SpendPanel({
 
 export function GoalMini({ goal }: { goal: Goal }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const pct = goal.target ? Math.min(100, Math.round((goal.saved / goal.target) * 100)) : 0;
   return (
     <div className="goal">

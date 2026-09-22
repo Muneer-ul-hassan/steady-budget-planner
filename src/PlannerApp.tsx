@@ -5,10 +5,12 @@ import { db } from "./lib/db";
 import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens, readStorage } from "./types";
 import { InfoBadge, IconButton, SeedBanner, SpendPanel, GoalMini, Sidebar, Topbar, RightNow, AddModal, CommandBar } from "./components/Shared";
 import { Today, Month, Bills, Goals, Income as IncomeScreen, Debt as DebtScreen, Envelopes as EnvelopesScreen, Milestones, Settings, Help } from "./components/Screens";
+import { useTranslation } from "./lib/i18n";
+import { useCurrency } from "./lib/currency";
 
 export default function PlannerApp() {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const [active, setActive] = useState<Screen>('today');
   const [focus, setFocus] = useState(false);
   const [command, setCommand] = useState(false);

@@ -34,7 +34,7 @@ export function Today({
   onHelp: () => void;
 }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const [brain, setBrain] = useState<string[]>(() => readStorage('budget-brain', []));
   const [brainInput, setBrainInput] = useState('');
   const [graphToggle, setGraphToggle] = useState(false);
@@ -277,7 +277,7 @@ export function Month({
   onHelp: () => void;
 }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const events = useMemo(() => {
     if (emptyMode) return {};
     const map: Record<number, string[]> = {};
@@ -349,7 +349,7 @@ export function Bills({
   onHelp: () => void;
 }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   return (
     <div className="screen-body">
       <section className="card list-card section-wide">
@@ -365,7 +365,7 @@ export function Bills({
 
 export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; setGoals: (g: Goal[]) => void; emptyMode: boolean; onHelp: () => void }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
@@ -400,7 +400,7 @@ export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; s
 
 export function Income({ income, emptyMode, onAdd, onRemove }: { income: Income[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const total = income.reduce((sum, item) => sum + item.amount, 0);
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Everything that came in')}<InfoBadge text="Log all your income here, like your salary or unexpected cash." /></h2><span className="card-meta">{t('This month')}</span></div>{income.length === 0 ? <div className="empty-state"><strong>{t('No money in yet')}</strong><span>{t('Starting at zero is okay. Add income when it arrives.')}</span></div> : income.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.source}</span><span className="list-detail">{item.date}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Put down money in')}</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">{t('Came in')}</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{income.length ? `${income.length} source${income.length === 1 ? '' : 's'}` : 'nothing added yet'}</p></section><section className="card small-card"><h2 className="eyebrow">{t('Still to come')}</h2><div className="metric">{money(0)}</div><p>{t('No future income added')}</p></section></div></div>;
 }
@@ -408,7 +408,7 @@ export function Income({ income, emptyMode, onAdd, onRemove }: { income: Income[
 
 export function Debt({ debts, emptyMode, onAdd, onRemove }: { debts: Debt[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   const total = debts.reduce((sum, item) => sum + item.amount, 0);
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Paying it down')}<InfoBadge text="Track your debts here. Enter the minimum payments to make sure they are accounted for in your budget." /></h2><span className="card-meta">{t('one step at a time')}</span></div>{debts.length === 0 ? <div className="empty-state"><strong>{t('Nothing owed on this file')}</strong><span>{t('If you have debt, add it here and keep the next step visible.')}</span></div> : debts.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">Minimum payment {money(item.minimum)}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Add a debt')}</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">{t('Still owed')}</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{debts.length ? 'across your debts' : 'nothing owed on this file'}</p></section><section className="card small-card"><h2 className="eyebrow">{t('Which one first?')}</h2><div className="metric">{debts.length ? debts[0].name : '—'}</div><p>{t('the next small step')}</p></section></div></div>;
 }
@@ -416,14 +416,14 @@ export function Debt({ debts, emptyMode, onAdd, onRemove }: { debts: Debt[]; emp
 
 export function Envelopes({ envelopes, emptyMode, onAdd, onRemove }: { envelopes: Envelope[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Every envelope')}<InfoBadge text="Assign budgets to different categories of spending. This does not take money out of your 'safe to spend'—it just tracks where it's going." /></h2><span className="card-meta">{t('your kinds of spending')}</span></div>{envelopes.length === 0 ? <div className="empty-state"><strong>{t('No envelopes yet')}</strong><span>{t('Create a simple home for the spending you want to notice.')}</span></div> : envelopes.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">{money(Math.max(0, item.budget - item.spent))} left of {money(item.budget)}</span></span><span><span className="list-value">{money(item.budget)}</span><button className="text-button" onClick={() => onRemove(item.id)}>{t('Remove')}</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />{t('Add an envelope')}</button></section><section className="card section-wide"><h2 className="eyebrow">{t('The rule')}</h2><p className="long-copy">{emptyMode ? 'Everything you log can be assigned later. You do not need to decide the perfect categories today.' : 'Tap a kind to move it to the other side. The envelopes are only here to help the money feel less abstract.'}</p></section></div>;
 }
 
 
 export function Milestones({ bills, spends, goals, emptyMode, startingBalance, onHelp }: { bills: Bill[]; spends: Spend[]; goals: Goal[]; emptyMode: boolean; startingBalance: number; onHelp: () => void }) {
   const { t } = useTranslation();
-  const { currency } = useCurrency();
+  const { currency, money, shortMoney } = useCurrency();
   // Compute dynamic milestone logic
   const allBillsPaid = bills.length > 0 && bills.every(b => b.paid);
   
@@ -469,7 +469,7 @@ export function Settings({
   const [balance, setBalance] = useState(String(startingBalance));
   useEffect(() => setBalance(String(startingBalance)), [startingBalance]);
   const { language, setLanguage, t } = useTranslation();
-  const { currency, setCurrency, currencies } = useCurrency();
+  const { currency, setCurrency, currencies, money, shortMoney } = useCurrency();
   
   return <div className="screen-body"><section className="card section-wide settings-block"><div className="card-head"><h2 className="eyebrow">{t('Make it yours')}</h2><span className="card-meta">{mode === 'empty' ? t('empty file') : t('saved on this device')}</span></div><div className="settings-row"><div><div className="settings-label">{t('Language')}</div><div className="settings-copy">{t('Choose your language')}</div></div><select value={language} onChange={(e) => setLanguage(e.target.value)}><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="pt">Português</option><option value="zh">中文</option><option value="hi">हिन्दी</option><option value="ar">العربية</option></select></div><div className="settings-row"><div><div className="settings-label">{t('Currency')}</div><div className="settings-copy">{t('Choose your currency')}</div></div><select value={currency} onChange={(e) => setCurrency(e.target.value)}><option value="$">$ (USD)</option><option value="€">€ (EUR)</option><option value="£">£ (GBP)</option><option value="Rs">Rs (PKR/INR)</option></select></div><div className="settings-row"><div><div className="settings-label">{t('Starting balance')}</div><div className="settings-copy">{t('The money you have to work with right now.')}</div></div><input value={balance} onChange={(e) => setBalance(e.target.value)} onBlur={() => setStartingBalance(Math.max(0, Number(balance) || 0))} inputMode="decimal" aria-label={t('Starting balance')} /></div><div className="settings-row"><div><div className="settings-label">{t('What to call the big number')}</div><div className="settings-copy">{t('Safe to spend today')}</div></div><select defaultValue="safe"><option value="safe">{t('Safe to spend today')}</option><option value="left">{t('Left for today')}</option></select></div><div className="settings-row"><div><div className="settings-label">{t('Appearance')}</div><div className="settings-copy">{t('Light')}</div></div><button className="btn btn-ghost" onClick={() => document.documentElement.classList.toggle('dark')}>{t('Toggle contrast')}</button></div></section><section className="card section-wide"><div className="card-head"><h2 className="eyebrow">{t('Your data')}</h2><span className="card-meta">{t('local to this device')}</span></div><p className="long-copy">{t('Use the example while you learn, or start from zero whenever you are ready. Your choice stays here after a refresh.')}</p><div className="action-row"><button className="btn btn-ghost" onClick={onExample}>{t('Restore the example')}</button><button className="btn btn-primary" onClick={onEmpty}>{t('Start over from zero')}</button></div></section></div>;
 }
