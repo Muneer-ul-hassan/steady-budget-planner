@@ -419,6 +419,7 @@ export function RightNow({ onDone }: { onDone: () => void }) {
 
 
 export function AddModal({ type, onClose, onSubmit }: { type: 'bill' | 'income' | 'debt' | 'envelope'; onClose: () => void; onSubmit: (name: string, amount: number, extra?: number) => void }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [extra, setExtra] = useState('');
