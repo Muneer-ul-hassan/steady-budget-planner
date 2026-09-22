@@ -9,14 +9,17 @@ export function InfoBadge({ text }: { text?: string }) {
   if (!text) return null;
   return (
     <span style={{ position: 'relative', display: 'inline-block' }}>
-      <button className="help-badge" onClick={() => setOpen(!open)} onBlur={() => setTimeout(() => setOpen(false), 150)} aria-label="More information">
+      <button className="help-badge" onClick={() => setOpen(!open)} aria-label="More information">
         ?
       </button>
       {open && (
-        <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, width: 220, padding: '10px 12px', background: '#251b31', color: 'white', borderRadius: 8, fontSize: 13, zIndex: 50, lineHeight: 1.4, fontWeight: 'normal', textAlign: 'left', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}>
-          {text}
-          <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #251b31' }} />
-        </div>
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setOpen(false); }} />
+          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, width: 220, padding: '10px 12px', background: '#251b31', color: 'white', borderRadius: 8, fontSize: 13, zIndex: 50, lineHeight: 1.4, fontWeight: 'normal', textAlign: 'left', boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}>
+            {t(text)}
+            <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #251b31' }} />
+          </div>
+        </>
       )}
     </span>
   );

@@ -33,8 +33,11 @@ export function Today({
   setCompleted: (b: boolean) => void;
   onHelp: () => void;
 }) {
+  const { t } = useTranslation();
+  const { currency } = useCurrency();
   const [brain, setBrain] = useState<string[]>(() => readStorage('budget-brain', []));
   const [brainInput, setBrainInput] = useState('');
+  const [graphToggle, setGraphToggle] = useState(false);
   
   const spent = spends.reduce((sum, s) => sum + s.amount, 0);
   const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
@@ -79,10 +82,12 @@ export function Today({
           <button className="hero-how" onClick={onHelp}>
             How is this worked out?
           </button>
-          <div className="meter">
+          <div className="meter" onClick={() => setGraphToggle(c => !c)} title="Click to toggle">
             <div className="meter-fill" style={{ width: dailyStart ? `${Math.min(100, (spent / dailyStart) * 100)}%` : '0%' }} />
           </div>
-          <p className="meter-text">{money(spent)} of today’s starting {money(dailyStart)}</p>
+          <p className="meter-text">
+            {graphToggle ? `${money(Math.max(0, dailyStart - spent))} remaining today` : `${money(spent)} of today’s starting ${money(dailyStart)}`}
+          </p>
           <div className="quickchips">
             {[
               [4, 'Coffee', 'chip-pink'],
@@ -457,6 +462,7 @@ export function Settings({
 
 
 export function Help({ onExample, onEmpty }: { onExample: () => void; onEmpty: () => void }) {
+  const { t } = useTranslation();
   return <div className="screen-body"><section className="card section-wide"><div className="card-head"><h2 className="eyebrow">{t('How this planner works')}</h2><span className="card-meta">{t('plain words')}</span></div><div className="help-list"><details open><summary>Pick a screen. Read only that.</summary><p>Today is for the one thing you need now. Planner shows the month. Bills, Money in, Goals, Debt, Envelopes and Milestones keep the rest somewhere calm.</p></details><details><summary>Use it on your phone and computer</summary><p>Your saved numbers stay on this device while it opens. Nothing here needs an account.</p></details><details><summary>Start with an example or start blank</summary><p>The example is made up. Empty file means every balance, bill, goal and category starts at zero.</p></details><details><summary>Keyboard shortcuts</summary><p>Press Ctrl or Command plus K for quick actions. Press Escape to close a dialog.</p></details></div></section><section className="card section-wide"><h2 className="eyebrow">{t('Choose your starting point')}</h2><div className="action-row"><button className="btn btn-ghost" onClick={onExample}>{t('Keep the example')}</button><button className="btn btn-primary" onClick={onEmpty}>{t('Start with an empty file')}</button></div></section></div>;
 
 

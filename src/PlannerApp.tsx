@@ -73,7 +73,7 @@ export default function PlannerApp() {
     setStartingBalanceState(value);
     setMode(value === 0 ? 'empty' : 'custom');
   };
-  const addSpend = (data: Omit<Spend, 'id'>) => { db.spends.add(data as any); };
+  const addSpend = (data: Omit<Spend, 'id'>) => { db.spends.add(data as any); setShowBanner(false); };
   const totalSpent = useMemo(() => spends.reduce((sum, item) => sum + item.amount, 0), [spends]);
 
   const content = active === 'today'
