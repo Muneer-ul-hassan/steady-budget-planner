@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ArrowDownToLine, CalendarDays, Check, ChevronRight, CircleHelp, Flag, Gauge, Keyboard, ListChecks, MoreHorizontal, Plus, RotateCcw, Settings2, Target, Wallet, X } from "lucide-react";
 import { Screen, Mode, Spend, Goal, Bill, Income, Debt, Envelope, exampleGoals, exampleBills, exampleIncome, exampleEnvelopes, screens } from "../types";
+import { useTranslation } from "../lib/i18n";
+import { useCurrency } from "../lib/currency";
 
 export function InfoBadge({ text }: { text?: string }) {
   const { t } = useTranslation();
