@@ -215,8 +215,31 @@ export function Today({
         </section>
       </div>
       <section className="card section-wide">
-        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge onClick={onHelp} /></h2><span className="card-meta">Sep 1&nbsp;&nbsp;&nbsp; today&nbsp;&nbsp;&nbsp; Sep 30</span></div>
-        <div className="mini-chart">{Array.from({ length: 15 }, (_, i) => <span key={i} className={i === 10 ? 'today-bar' : ''} style={{ height: `${emptyMode ? 4 + (i % 3) * 4 : 12 + (i % 6) * 7}px` }} />)}</div>
+        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge onClick={onHelp} /></h2><span className="card-meta">Last 15 days</span></div>
+        <div className="mini-chart">
+          {(() => {
+            const chartDays = 15;
+            if (emptyMode || spends.length === 0) {
+              return Array.from({ length: chartDays }, (_, i) => <span key={i} className={i === chartDays - 1 ? 'today-bar' : ''} style={{ height: `${emptyMode ? 4 + (i % 3) * 4 : 12 + (i % 6) * 7}px` }} />);
+            }
+            const today = new Date();
+            const days = Array.from({ length: chartDays }, (_, i) => {
+              const d = new Date(today);
+              d.setDate(d.getDate() - (chartDays - 1 - i));
+              return d.toISOString().split('T')[0];
+            });
+            const spendMap = spends.reduce((acc, s) => {
+              acc[s.date] = (acc[s.date] || 0) + s.amount;
+              return acc;
+            }, {} as Record<string, number>);
+            const maxSpend = Math.max(...days.map(d => spendMap[d] || 0), 1);
+            return days.map((d, i) => {
+              const amount = spendMap[d] || 0;
+              const height = amount === 0 ? 4 : Math.max(8, (amount / maxSpend) * 40);
+              return <span key={i} className={i === chartDays - 1 ? 'today-bar' : ''} style={{ height: `${height}px` }} />;
+            });
+          })()}
+        </div>
         <p className="chart-caption">{emptyMode ? 'Your spending shape will appear as you go.' : spends.length ? 'Your spending shape is taking form.' : 'nothing logged this month yet — the shape appears as you go'}</p>
       </section>
       <section className="card section-wide">

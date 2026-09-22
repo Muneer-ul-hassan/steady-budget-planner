@@ -115,7 +115,7 @@ export default function PlannerApp() {
         <aside className="month-rail">{['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'].map((month) => <button key={month} className={`month-tab ${month === 'SEP' ? 'active' : ''}`} onClick={() => setActive('month')}>{month}</button>)}</aside>
       </div>
       <button className="fab" onClick={() => setLogOpen(true)}><Plus size={15} />Log a spend</button>
-      <nav className="mobile-nav">{[...screens.slice(0, 4), { id: 'goals' as Screen, label: 'Goals', icon: Target }].map(({ id, label, icon: NavIcon }) => <button key={id} className={active === id ? 'active' : ''} onClick={() => setActive(id)}><NavIcon />{label}</button>)}</nav>
+      <nav className="mobile-nav">{screens.map(({ id, label, icon: NavIcon }) => <button key={id} className={active === id ? 'active' : ''} onClick={() => setActive(id)}><NavIcon />{label}</button>)}</nav>
       {logOpen && <div className="modal-scrim" onClick={() => setLogOpen(false)}><div className="modal" onClick={(e) => e.stopPropagation()}><div className="modal-head"><h2>Log a spend</h2><IconButton label="Close" onClick={() => setLogOpen(false)}><X /></IconButton></div><SpendPanel spends={spends} onAdd={(s) => { addSpend(s); setLogOpen(false); }} /></div></div>}
       {modalType && <AddModal type={modalType} onClose={() => setModalType(null)} onSubmit={modalSubmit} />}
       {command && <CommandBar onClose={() => setCommand(false)} setScreen={setActive} onSpend={(amount, category) => addSpend({ amount, category, note: '', date: '2026-09-21' })} />}
