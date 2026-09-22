@@ -61,6 +61,8 @@ export function SeedBanner({
   onKeep: () => void;
   onExisting: () => void;
 }) {
+  const { t } = useTranslation();
+  const { currency, money, shortMoney } = useCurrency();
   return (
     <div className="seed-banner">
       <Plus size={14} />
@@ -92,6 +94,8 @@ export function SpendPanel({
   spends: Spend[];
   onAdd: (s: Omit<Spend, 'id'>) => void;
 }) {
+  const { t } = useTranslation();
+  const { currency, money, shortMoney } = useCurrency();
   const [amount, setAmount] = useState('');
   
   // Dynamic categories
@@ -285,6 +289,8 @@ export function Sidebar({
   goals: Goal[];
   onAdd: (s: Omit<Spend, 'id'>) => void;
 }) {
+  const { t } = useTranslation();
+  const { currency, money, shortMoney } = useCurrency();
   return (
     <aside className="sidebar" aria-label="Tools and goals">
       <div className="brand">
@@ -345,6 +351,8 @@ export function Topbar({
   onHelp: () => void;
   onSettings: () => void;
 }) {
+  const { t } = useTranslation();
+  const { currency, money, shortMoney } = useCurrency();
   const titleMap: Record<Screen, string> = {
     today: 'Good afternoon',
     month: 'September 2026',
@@ -422,6 +430,7 @@ export function RightNow({ onDone }: { onDone: () => void }) {
 
 export function AddModal({ type, onClose, onSubmit }: { type: 'bill' | 'income' | 'debt' | 'envelope'; onClose: () => void; onSubmit: (name: string, amount: number, extra?: number) => void }) {
   const { t } = useTranslation();
+  const { currency, money, shortMoney } = useCurrency();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [extra, setExtra] = useState('');
