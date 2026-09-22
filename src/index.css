@@ -1622,14 +1622,14 @@ ul {
     bottom: 0;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    background: #f9f7fc;
+    background: var(--nav);
     border-top: 1px solid var(--line);
-    box-shadow: 0 -4px 18px #50406414;
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.06);
   }
   .mobile-nav button {
     background: transparent;
     padding: 16px 4px 14px;
-    color: #777180;
+    color: var(--muted);
     font-size: 12px;
   }
   .mobile-nav button.active {
