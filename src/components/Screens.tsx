@@ -51,11 +51,11 @@ export function Today({
   };
   return (
     <div className="screen-body">
-      <RightNow onDone={() => setCompleted(true)} />
+      {!(completed || spends.some(s => s.date === new Date().toISOString().split('T')[0])) && <RightNow onDone={() => setCompleted(true)} />}
       <div className="herorow">
         <section className="hero-panel">
           <p className="eyebrow">
-            Safe to spend today <InfoBadge onClick={onHelp} />
+            Safe to spend today <InfoBadge text="This is the money you can safely spend today without touching your bills, goals, or debts. It grows if you spend less, and shrinks if you overspend." />
           </p>
           <p className="hero num">
             <span className="hero-mark">$</span>
@@ -101,7 +101,7 @@ export function Today({
         <section className="card quests">
           <div className="card-head">
             <h2 className="eyebrow">
-              Three small things <InfoBadge onClick={onHelp} />
+              Three small things <InfoBadge text="These are three small habits that keep you on track. Check them off by logging spends, hitting milestones, or staying within your safe limit." />
             </h2>
             <span className="card-meta">{completed ? '2' : '1'} of 3 done</span>
           </div>
@@ -164,7 +164,7 @@ export function Today({
         </section>
         <section className="card braindump">
           <div className="card-head">
-            <h2 className="eyebrow">Brain dump <InfoBadge onClick={onHelp} /></h2>
+            <h2 className="eyebrow">Brain dump <InfoBadge text="A place to write down quick thoughts or future spends before you officially log them." /></h2>
             <span className="card-meta">{brain.length ? `${brain.length} note${brain.length === 1 ? '' : 's'}` : ''}</span>
           </div>
           <form onSubmit={submitBrain}>
@@ -189,11 +189,11 @@ export function Today({
       </div>
       <div className="subgrid">
         <section className="card small-card">
-          <h2 className="eyebrow">Coming up <InfoBadge onClick={onHelp} /></h2>
+          <h2 className="eyebrow">Coming up <InfoBadge text="The next bills that are due soon. Make sure you have enough set aside to cover these." /></h2>
           {emptyMode ? <p className="empty-note">No bills added yet.</p> : <div className="barlist">{exampleBills.map((bill) => <div className="barline" key={bill.id}><span>{bill.name}</span><i /><b>{shortMoney(bill.amount)}</b></div>)}</div>}
         </section>
         <section className="card small-card">
-          <h2 className="eyebrow">Run to payday <InfoBadge onClick={onHelp} /></h2>
+          <h2 className="eyebrow">Run to payday <InfoBadge text="How much you have left to safely spend before your next payday arrives." /></h2>
           <p>{emptyMode ? 'No starting balance yet' : '10 days left'}</p>
           <div className="metric">{money(Math.max(0, startingBalance - spent))}</div>
           <p>Safe until payday</p>
@@ -201,7 +201,7 @@ export function Today({
       </div>
       <div className="subgrid">
         <section className="card small-card">
-          <div className="card-head"><h2 className="eyebrow">The month so far <InfoBadge onClick={onHelp} /></h2><span className="card-meta">September</span></div>
+          <div className="card-head"><h2 className="eyebrow">The month so far <InfoBadge text="A quick summary of everything that has come in, and everything you have spent this month." /></h2><span className="card-meta">September</span></div>
           <div className="summary-metrics">
             <div><span>Came in</span><b>{money(emptyMode ? 0 : totalIncome)}</b></div>
             <div><span>Went out</span><b>{money(spent + (emptyMode ? 0 : totalBills))}</b></div>
@@ -209,13 +209,13 @@ export function Today({
           </div>
         </section>
         <section className="card small-card">
-          <div className="card-head"><h2 className="eyebrow">Milestones <InfoBadge onClick={onHelp} /></h2><span className="card-meta">{emptyMode ? '0 of 4 reached' : '1 of 4 reached'}</span></div>
+          <div className="card-head"><h2 className="eyebrow">Milestones <InfoBadge text="Automatic achievements you unlock by managing your budget, paying bills, and hitting goals." /></h2><span className="card-meta">{emptyMode ? '0 of 4 reached' : '1 of 4 reached'}</span></div>
           <div className="milestone-mini"><span className="milestone-dot done"><Check size={11} /></span><span>Every bill covered before payday</span></div>
           <div className="milestone-mini"><span className="milestone-dot" /><span>A day without spending</span></div>
         </section>
       </div>
       <section className="card section-wide">
-        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge onClick={onHelp} /></h2><span className="card-meta">Last 15 days</span></div>
+        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge text="A visual history of how much you have spent over the last 15 days." /></h2><span className="card-meta">Last 15 days</span></div>
         <div className="mini-chart">
           {(() => {
             const chartDays = 15;
@@ -312,12 +312,12 @@ export function Month({
   return (
     <div className="screen-body">
       <section className="card section-wide">
-        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge onClick={onHelp} /></h2><div className="card-meta">still to pay&nbsp;&nbsp; money in&nbsp;&nbsp; already paid</div></div>
+        <div className="card-head"><h2 className="eyebrow">Every day this month <InfoBadge text="A visual history of your daily spending over the entire month." /></h2><div className="card-meta">still to pay&nbsp;&nbsp; money in&nbsp;&nbsp; already paid</div></div>
         <div className="calendar"><table><thead><tr>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <th key={d}>{d}</th>)}</tr></thead><tbody>{Array.from({ length: 5 }, (_, row) => <tr key={row}>{Array.from({ length: 7 }, (_, col) => { const n = row * 7 + col - 1; return <td key={col} className={`day-cell ${n === today.getDate() ? 'today' : ''}`}>{n > 0 && n <= lastDay && <><span className="day-num">{n}</span>{events[n] && events[n].map((ev, i) => <div key={i} className="day-event">{ev}</div>)}</>}</td>; })}</tr>)}</tbody></table></div>
       </section>
       <div className="screen-grid">
         <section className="card list-card"><div className="card-head"><h2 className="eyebrow">What you logged in Sep 2026</h2></div><p className="register-empty">{emptyMode ? 'Nothing logged yet. This page will fill as you add spends.' : 'nothing logged this month yet — the shape appears as you go'}</p></section>
-        <section className="card list-card"><div className="card-head"><h2 className="eyebrow">Run to payday <InfoBadge onClick={onHelp} /></h2></div><div className="metric">{emptyMode ? money(0) : money(remaining)}</div><p className="register-sub">{emptyMode ? 'Add a starting balance in Settings.' : `${daysLeft} days left · about ${money(remaining / daysLeft)}/day`}</p></section>
+        <section className="card list-card"><div className="card-head"><h2 className="eyebrow">Run to payday <InfoBadge text="How much you have left to safely spend before your next payday arrives." /></h2></div><div className="metric">{emptyMode ? money(0) : money(remaining)}</div><p className="register-sub">{emptyMode ? 'Add a starting balance in Settings.' : `${daysLeft} days left · about ${money(remaining / daysLeft)}/day`}</p></section>
       </div>
       <section className="card section-wide"><div className="card-head"><h2 className="eyebrow">Notes for September</h2><span className="card-meta">saved on this device</span></div><input className="braindump-input" placeholder="Type a month note, press Enter" /></section>
     </div>
@@ -343,7 +343,7 @@ export function Bills({
   return (
     <div className="screen-body">
       <section className="card list-card section-wide">
-        <div className="card-head"><h2 className="eyebrow">Every bill you owe <InfoBadge onClick={onHelp} /></h2><span className="card-meta">Soonest first</span></div>
+        <div className="card-head"><h2 className="eyebrow">Every bill you owe <InfoBadge text="A list of all your recurring bills and must-pays. Check them off as you pay them to update your safe-to-spend balance." /></h2><span className="card-meta">Soonest first</span></div>
         {bills.length === 0 ? <div className="empty-state"><strong>No bills yet</strong><span>Add the things that need paying before they become a surprise.</span></div> : bills.map((bill) => <div className="list-row" key={bill.id}><button className="check-line" onClick={() => onToggle(bill.id)}><span className={`quest-box ${bill.paid ? 'checked' : ''}`}>{bill.paid && <Check size={12} />}</span><span><span className="list-label">{bill.name}</span><span className="list-detail">{bill.due}</span></span></button><span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span className="list-value">{money(bill.amount)}</span><span className={`pill ${bill.paid ? '' : 'chip-peach'}`}>{bill.paid ? 'paid' : 'still to pay'}</span><button className="text-button" style={{ marginLeft: 4, opacity: 0.5 }} onClick={() => onDeleteBill(bill.id)}>×</button></span></div>)}
         <button className="btn btn-primary" onClick={onAddBill}><Plus size={14} />Add a bill</button>
       </section>
@@ -375,7 +375,7 @@ export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; s
   return (
     <div className="screen-body">
       <section className="card list-card section-wide">
-        <div className="card-head"><h2 className="eyebrow">Every goal <InfoBadge onClick={onHelp} /></h2><span className="card-meta">Put away so far</span></div>
+        <div className="card-head"><h2 className="eyebrow">Every goal <InfoBadge text="Money you are setting aside for the future. You can put money into these at any time." /></h2><span className="card-meta">Put away so far</span></div>
         {goals.length === 0 ? <div className="empty-state"><strong>No goals yet</strong><span>Give your money somewhere kind to go.</span></div> : goals.map((g) => <div className="goal goal-expanded" key={g.id}><div className="goal-row"><span className="goal-name">{g.name}</span><span className="goal-val num">{shortMoney(g.saved)} / {shortMoney(g.target)}</span></div><div className="track"><div className="track-fill" style={{ width: `${g.target ? Math.min(100, (g.saved / g.target) * 100) : 0}%` }} /></div><p className="goal-note"><span>{shortMoney(Math.max(0, g.target - g.saved))} to go</span><span>{shortMoney(g.monthly)} / month</span></p><div className="goal-actions"><button className="btn btn-primary" onClick={() => setGiveId(g.id)}>Put in</button><button className="btn btn-ghost" onClick={() => setGoals(goals.filter((item) => item.id !== g.id))}>Remove</button></div></div>)}
         <button className="btn btn-primary" onClick={() => setOpen(true)}><Plus size={14} />Add a goal</button>
         {emptyMode && <p className="empty-note">You are working from a blank file. Goals start at zero.</p>}
@@ -388,18 +388,18 @@ export function Goals({ goals, setGoals, emptyMode, onHelp }: { goals: Goal[]; s
 
 export function Income({ income, emptyMode, onAdd, onRemove }: { income: Income[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
   const total = income.reduce((sum, item) => sum + item.amount, 0);
-  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Everything that came in <InfoBadge /></h2><span className="card-meta">This month</span></div>{income.length === 0 ? <div className="empty-state"><strong>No money in yet</strong><span>Starting at zero is okay. Add income when it arrives.</span></div> : income.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.source}</span><span className="list-detail">{item.date}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Put down money in</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">Came in</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{income.length ? `${income.length} source${income.length === 1 ? '' : 's'}` : 'nothing added yet'}</p></section><section className="card small-card"><h2 className="eyebrow">Still to come</h2><div className="metric">{money(0)}</div><p>No future income added</p></section></div></div>;
+  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Everything that came in <InfoBadge text="Log all your income here, like your salary or unexpected cash." /></h2><span className="card-meta">This month</span></div>{income.length === 0 ? <div className="empty-state"><strong>No money in yet</strong><span>Starting at zero is okay. Add income when it arrives.</span></div> : income.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.source}</span><span className="list-detail">{item.date}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Put down money in</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">Came in</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{income.length ? `${income.length} source${income.length === 1 ? '' : 's'}` : 'nothing added yet'}</p></section><section className="card small-card"><h2 className="eyebrow">Still to come</h2><div className="metric">{money(0)}</div><p>No future income added</p></section></div></div>;
 }
 
 
 export function Debt({ debts, emptyMode, onAdd, onRemove }: { debts: Debt[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
   const total = debts.reduce((sum, item) => sum + item.amount, 0);
-  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Paying it down <InfoBadge /></h2><span className="card-meta">one step at a time</span></div>{debts.length === 0 ? <div className="empty-state"><strong>Nothing owed on this file</strong><span>If you have debt, add it here and keep the next step visible.</span></div> : debts.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">Minimum payment {money(item.minimum)}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Add a debt</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">Still owed</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{debts.length ? 'across your debts' : 'nothing owed on this file'}</p></section><section className="card small-card"><h2 className="eyebrow">Which one first?</h2><div className="metric">{debts.length ? debts[0].name : '—'}</div><p>the next small step</p></section></div></div>;
+  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Paying it down <InfoBadge text="Track your debts here. Enter the minimum payments to make sure they are accounted for in your budget." /></h2><span className="card-meta">one step at a time</span></div>{debts.length === 0 ? <div className="empty-state"><strong>Nothing owed on this file</strong><span>If you have debt, add it here and keep the next step visible.</span></div> : debts.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">Minimum payment {money(item.minimum)}</span></span><span><span className="list-value">{money(item.amount)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Add a debt</button></section><div className="screen-grid"><section className="card small-card"><h2 className="eyebrow">Still owed</h2><div className="metric">{money(emptyMode ? 0 : total)}</div><p>{debts.length ? 'across your debts' : 'nothing owed on this file'}</p></section><section className="card small-card"><h2 className="eyebrow">Which one first?</h2><div className="metric">{debts.length ? debts[0].name : '—'}</div><p>the next small step</p></section></div></div>;
 }
 
 
 export function Envelopes({ envelopes, emptyMode, onAdd, onRemove }: { envelopes: Envelope[]; emptyMode: boolean; onAdd: () => void; onRemove: (id: number) => void }) {
-  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Every envelope <InfoBadge /></h2><span className="card-meta">your kinds of spending</span></div>{envelopes.length === 0 ? <div className="empty-state"><strong>No envelopes yet</strong><span>Create a simple home for the spending you want to notice.</span></div> : envelopes.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">{money(Math.max(0, item.budget - item.spent))} left of {money(item.budget)}</span></span><span><span className="list-value">{money(item.budget)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Add an envelope</button></section><section className="card section-wide"><h2 className="eyebrow">The rule</h2><p className="long-copy">{emptyMode ? 'Everything you log can be assigned later. You do not need to decide the perfect categories today.' : 'Tap a kind to move it to the other side. The envelopes are only here to help the money feel less abstract.'}</p></section></div>;
+  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Every envelope <InfoBadge text="Assign budgets to different categories of spending. This does not take money out of your 'safe to spend'—it just tracks where it's going." /></h2><span className="card-meta">your kinds of spending</span></div>{envelopes.length === 0 ? <div className="empty-state"><strong>No envelopes yet</strong><span>Create a simple home for the spending you want to notice.</span></div> : envelopes.map((item) => <div className="list-row" key={item.id}><span><span className="list-label">{item.name}</span><span className="list-detail">{money(Math.max(0, item.budget - item.spent))} left of {money(item.budget)}</span></span><span><span className="list-value">{money(item.budget)}</span><button className="text-button" onClick={() => onRemove(item.id)}>Remove</button></span></div>)}<button className="btn btn-primary" onClick={onAdd}><Plus size={14} />Add an envelope</button></section><section className="card section-wide"><h2 className="eyebrow">The rule</h2><p className="long-copy">{emptyMode ? 'Everything you log can be assigned later. You do not need to decide the perfect categories today.' : 'Tap a kind to move it to the other side. The envelopes are only here to help the money feel less abstract.'}</p></section></div>;
 }
 
 
@@ -429,7 +429,7 @@ export function Milestones({ bills, spends, goals, emptyMode, startingBalance, o
   const spent = spends.reduce((sum, s) => sum + s.amount, 0);
   const safe = Math.max(0, startingBalance - spent);
 
-  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Every milestone <InfoBadge onClick={onHelp} /></h2><span className="card-meta">{reachedCount} of 4 reached</span></div>{items.map((item, i) => <button className="milestone-row" key={item}><span className={`milestone-dot ${done[i] ? 'done' : ''}`}>{done[i] && <Check size={11} />}</span><span><b>{item}</b><small>{done[i] ? 'done' : 'not yet'}</small></span><ChevronRight size={15} /></button>)}<p className="empty-note">read straight out of the file — once true, they stay true.</p></section><section className="card section-wide"><div className="card-head"><h2 className="eyebrow">September</h2><span className="card-meta">10 days to payday</span></div><div className="milestone-quote">{money(emptyMode ? 0 : safe)} still yours</div><p className="register-sub">saved on this device</p></section></div>;
+  return <div className="screen-body"><section className="card list-card section-wide"><div className="card-head"><h2 className="eyebrow">Every milestone <InfoBadge text="Automatic achievements you unlock by managing your budget, paying bills, and hitting goals." /></h2><span className="card-meta">{reachedCount} of 4 reached</span></div>{items.map((item, i) => <button className="milestone-row" key={item}><span className={`milestone-dot ${done[i] ? 'done' : ''}`}>{done[i] && <Check size={11} />}</span><span><b>{item}</b><small>{done[i] ? 'done' : 'not yet'}</small></span><ChevronRight size={15} /></button>)}<p className="empty-note">read straight out of the file — once true, they stay true.</p></section><section className="card section-wide"><div className="card-head"><h2 className="eyebrow">September</h2><span className="card-meta">10 days to payday</span></div><div className="milestone-quote">{money(emptyMode ? 0 : safe)} still yours</div><p className="register-sub">saved on this device</p></section></div>;
 }
 
 

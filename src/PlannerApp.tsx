@@ -11,12 +11,12 @@ export default function PlannerApp() {
   const [focus, setFocus] = useState(false);
   const [command, setCommand] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
-  const [helpOn, setHelpOn] = useState(true);
+  const [helpOn, setHelpOn] = useState(() => readStorage('budget-help-visible', true));
   const [modalType, setModalType] = useState<'bill' | 'income' | 'debt' | 'envelope' | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [mode, setMode] = useState<Mode>(() => readStorage('budget-mode', 'example'));
   const [showBanner, setShowBanner] = useState(() => readStorage('budget-banner-visible', true));
-  const [completed, setCompleted] = useState(true);
+  const [completed, setCompleted] = useState(false);
   const [startingBalance, setStartingBalanceState] = useState(() => readStorage('budget-starting-balance', 1319));
   const spends = useLiveQuery(() => db.spends.toArray()) || [];
   const goals = useLiveQuery(() => db.goals.toArray()) || [];
@@ -118,7 +118,7 @@ export default function PlannerApp() {
             onHelp={() => setActive('help')}
             onSettings={() => setActive('settings')}
           />
-          {active === 'today' && helpOn && <div className="help-tip"><p><b>Help is on.</b> Tap any <span className="help-badge">?</span> to see what a section does. Turn it off with the purple <span className="help-badge">?</span> at the top when you are done.</p><button className="btn btn-ghost" onClick={() => setHelpOn(false)}>Got it</button></div>}
+          {active === 'today' && helpOn && <div className="help-tip"><p><b>Help is on.</b> Tap any <span className="help-badge">?</span> to see what a section does. Turn it off with the purple <span className="help-badge">?</span> at the top when you are done.</p><button className="btn btn-ghost" onClick={() => { setHelpOn(false); localStorage.setItem('budget-help-visible', 'false'); }}>Got it</button></div>}
           {content}
         </main>
         <aside className="month-rail">{['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'].map((month) => <button key={month} className={`month-tab ${month === 'SEP' ? 'active' : ''}`} onClick={() => setActive('month')}>{month}</button>)}</aside>
