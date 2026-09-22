@@ -322,6 +322,7 @@ export function Topbar({
   onCommand,
   onLog,
   onHelp,
+  onSettings,
 }: {
   screen: Screen;
   focus: boolean;
@@ -329,6 +330,7 @@ export function Topbar({
   onCommand: () => void;
   onLog: () => void;
   onHelp: () => void;
+  onSettings: () => void;
 }) {
   const titleMap: Record<Screen, string> = {
     today: 'Good afternoon',
@@ -367,8 +369,12 @@ export function Topbar({
           <span>Quick actions</span>
           <span className="kbd">Ctrl K</span>
         </button>
+        <button className="help-toggle" onClick={onSettings} aria-label="Settings">
+          <Settings2 size={16} />
+        </button>
         <button className="help-toggle" onClick={onHelp} aria-label="Toggle help">
-          ?
+          <CircleHelp size={16} />
+          <span className="help-toggle-label">Help</span>
         </button>
         <button className={`focus-toggle ${focus ? 'focus-on' : ''}`} onClick={() => setFocus(!focus)}>
           <span className="focus-knob" />

@@ -108,7 +108,15 @@ export default function PlannerApp() {
       <div className={`app ${focus ? 'focus-mode' : ''}`}>
         <Sidebar active={active} setActive={setActive} spends={spends} goals={goals} onAdd={addSpend} />
         <main className="main">
-          <Topbar screen={active} focus={focus} setFocus={setFocus} onCommand={() => setCommand(true)} onLog={() => setLogOpen(true)} onHelp={() => setHelpOn(!helpOn)} />
+          <Topbar
+            screen={active}
+            focus={focus}
+            setFocus={setFocus}
+            onCommand={() => setCommand(true)}
+            onLog={() => setLogOpen(true)}
+            onHelp={() => setActive('help')}
+            onSettings={() => setActive('settings')}
+          />
           {active === 'today' && helpOn && <div className="help-tip"><p><b>Help is on.</b> Tap any <span className="help-badge">?</span> to see what a section does. Turn it off with the purple <span className="help-badge">?</span> at the top when you are done.</p><button className="btn btn-ghost" onClick={() => setHelpOn(false)}>Got it</button></div>}
           {content}
         </main>
