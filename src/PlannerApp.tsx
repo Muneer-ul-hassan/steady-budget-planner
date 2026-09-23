@@ -72,6 +72,7 @@ export default function PlannerApp() {
   // Live Sync across paired devices
   useEffect(() => {
     liveSync.init();
+    liveSync.pullLatest();
     const handleRemoteUpdate = (evt: any) => {
       const p = evt?.detail;
       const bal = readStorage('budget-starting-balance', 1319);
@@ -96,7 +97,7 @@ export default function PlannerApp() {
   // Broadcast local changes to paired device automatically
   useEffect(() => {
     liveSync.queueBroadcast();
-  }, [spends, goals, bills, income, debts, envelopes, startingBalance, plannerTitle, palette, theme]);
+  }, [spends, goals, bills, income, debts, envelopes, startingBalance, plannerTitle, palette, theme, mode]);
 
   useEffect(() => {
     const f = (e: KeyboardEvent) => {

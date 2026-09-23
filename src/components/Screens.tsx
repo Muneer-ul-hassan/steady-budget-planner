@@ -3879,8 +3879,8 @@ export function Settings({
   };
 
   const handleSyncNow = async () => {
-    const snapshot = await createPlannerSnapshot();
-    syncEngine.broadcast('SYNC_NOW', snapshot);
+    showToast('Syncing with your other device…');
+    await liveSync.pullLatest();
     liveSync.queueBroadcast(true);
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setLastSyncTime(now);

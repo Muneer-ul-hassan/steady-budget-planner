@@ -135,7 +135,12 @@ export function readStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {
     const stored = window.localStorage.getItem(key);
-    return stored === null ? fallback : (JSON.parse(stored) as T);
+    if (stored === null) return fallback;
+    try {
+      return JSON.parse(stored) as T;
+    } catch {
+      return stored as unknown as T;
+    }
   } catch {
     return fallback;
   }

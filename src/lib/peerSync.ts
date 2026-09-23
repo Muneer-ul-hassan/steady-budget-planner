@@ -29,13 +29,19 @@ function getSyncTopic(code: string): string {
   return `${TOPIC_PREFIX}sync_${clean}`;
 }
 
+const IN_MEMORY_CLIENT_ID = 'cli_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+
 function getMyDeviceId(): string {
-  let id = localStorage.getItem('steady_device_client_id');
-  if (!id) {
-    id = 'dev_' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem('steady_device_client_id', id);
+  try {
+    let id = sessionStorage.getItem('steady_session_client_id');
+    if (!id) {
+      id = IN_MEMORY_CLIENT_ID;
+      sessionStorage.setItem('steady_session_client_id', id);
+    }
+    return id;
+  } catch {
+    return IN_MEMORY_CLIENT_ID;
   }
-  return id;
 }
 
 /** Generate a random 6-digit display code */
@@ -258,20 +264,65 @@ class LiveSyncManager {
     }
   }
 
-  public queueBroadcast(immediate = false) {
+  public async pullLatest(): Promise<void> {
+    const code = this.pairedCode || localStorage.getItem('steady_paired_code');
+    if (!code) return;
+    try {
+      const topic = getSyncTopic(code);
+      const res = await fetch(`${RELAY_BASE}/${topic}/json?poll=1&since=10m`);
+      if (!res.ok) return;
+      const text = await res.text();
+      const lines = text.trim().split('\n').filter(Boolean);
+      for (const line of lines) {
+        try {
+          const raw = JSON.parse(line);
+          let parsedMsg: any = null;
+          if (raw.message) {
+            try { parsedMsg = JSON.parse(raw.message); } catch {}
+          }
+          const myId = getMyDeviceId();
+          const senderId = parsedMsg?.senderId || raw.senderId;
+          if (senderId && senderId === myId) continue;
+
+          const snapshot = await extractSnapshotFromEvent(raw);
+          if (snapshot) {
+            const hash = computeSnapshotHash(snapshot);
+            if (hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
+              continue;
+            }
+            this.lastReceivedHash = hash;
+            this.isApplyingRemote = true;
+            try {
+              await applyPlannerSnapshot(snapshot);
+              const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              localStorage.setItem('budget-last-sync-time', now);
+            } finally {
+              setTimeout(() => {
+                this.isApplyingRemote = false;
+              }, 800);
+            }
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.warn('pullLatest error:', e);
+    }
+  }
+
+  public queueBroadcast(force = false) {
     if (this.isApplyingRemote) return; // avoid feedback loop
     const code = this.pairedCode || localStorage.getItem('steady_paired_code');
     if (!code) return;
 
     clearTimeout(this.debounceTimer);
-    const delay = immediate ? 0 : 500;
+    const delay = force ? 0 : 400;
 
     this.debounceTimer = setTimeout(async () => {
       try {
         const snapshot = await createPlannerSnapshot();
         const hash = computeSnapshotHash(snapshot);
-        // Do not broadcast if identical to what we just received from peer or sent previously
-        if (hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
+        // Do not broadcast if identical to what we just received from peer or sent previously, unless forced
+        if (!force && hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
           return;
         }
 
