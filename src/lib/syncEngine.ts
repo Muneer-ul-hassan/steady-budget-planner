@@ -91,9 +91,9 @@ export async function createPlannerSnapshot(): Promise<SyncPayload> {
   const userName = localStorage.getItem('budget-user-name') || 'Alex';
   const theme = localStorage.getItem('budget-theme') || 'light';
   const palette = localStorage.getItem('budget-palette') || 'sage';
-  const currency = localStorage.getItem('budget-currency') || '$';
-  const currencyPosition = (localStorage.getItem('budget-currency-position') as 'left' | 'right') || 'left';
-  const centsFormat = (localStorage.getItem('budget-cents-format') as '.00' | ',00' | 'none') || '.00';
+  const currency = localStorage.getItem('steady_currency') || localStorage.getItem('budget-currency') || '$';
+  const currencyPosition = (localStorage.getItem('steady_currency_position') || localStorage.getItem('budget-currency-position') || 'left') as 'left' | 'right';
+  const centsFormat = (localStorage.getItem('steady_cents_format') || localStorage.getItem('budget-cents-format') || '.00') as '.00' | ',00' | 'none';
   const kinds = JSON.parse(localStorage.getItem('budget-kinds-list') || '["Coffee","Food","Groceries","Gas","Transit","Fun","Other"]');
   const activePlannerId = localStorage.getItem(ACTIVE_PLANNER_KEY) || 'default';
 
@@ -195,12 +195,33 @@ export async function applyPlannerSnapshot(payload: SyncPayload): Promise<void> 
   }
   if (payload.currency) {
     localStorage.setItem('budget-currency', payload.currency);
+    localStorage.setItem('steady_currency', payload.currency);
+    try {
+      const profiles = await db.profile.toArray();
+      if (profiles.length > 0) {
+        await db.profile.update(profiles[0].id, { currency: payload.currency });
+      } else {
+        await db.profile.add({
+          name: payload.userName || 'User',
+          title: payload.plannerTitle || 'My calm money plan',
+          currency: payload.currency,
+          language: 'en',
+          bigLabel: 'Safe to spend today',
+          theme: payload.palette || 'soft-spectrum',
+          alreadySetAside: 0
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to update db.profile currency:', e);
+    }
   }
   if (payload.currencyPosition) {
     localStorage.setItem('budget-currency-position', payload.currencyPosition);
+    localStorage.setItem('steady_currency_position', payload.currencyPosition);
   }
   if (payload.centsFormat) {
     localStorage.setItem('budget-cents-format', payload.centsFormat);
+    localStorage.setItem('steady_cents_format', payload.centsFormat);
   }
   if (payload.kinds) {
     localStorage.setItem('budget-kinds-list', JSON.stringify(payload.kinds));

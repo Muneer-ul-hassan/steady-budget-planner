@@ -57,10 +57,29 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, [profile?.currency]);
 
+  // Listen to remote sync updates
+  useEffect(() => {
+    const onRemoteData = (e: any) => {
+      const p = e.detail;
+      if (p?.currency && p.currency !== currency) {
+        setCurrencyState(p.currency);
+      }
+      if (p?.currencyPosition) {
+        setCurrencyPositionState(p.currencyPosition);
+      }
+      if (p?.centsFormat) {
+        setCentsFormatState(p.centsFormat);
+      }
+    };
+    window.addEventListener('steady_data_updated', onRemoteData);
+    return () => window.removeEventListener('steady_data_updated', onRemoteData);
+  }, [currency]);
+
   const setCurrency = async (newCurrency: string) => {
     setCurrencyState(newCurrency);
     try {
       localStorage.setItem('steady_currency', newCurrency);
+      localStorage.setItem('budget-currency', newCurrency);
     } catch (e) {
       console.error(e);
     }
@@ -83,14 +102,22 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Failed to update currency in db', err);
     }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('steady_broadcast_local_change'));
+    }
   };
 
   const setCurrencyPosition = (pos: 'left' | 'right') => {
     setCurrencyPositionState(pos);
     try {
       localStorage.setItem('steady_currency_position', pos);
+      localStorage.setItem('budget-currency-position', pos);
     } catch (e) {
       console.error(e);
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('steady_broadcast_local_change'));
     }
   };
 
@@ -98,8 +125,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     setCentsFormatState(fmt);
     try {
       localStorage.setItem('steady_cents_format', fmt);
+      localStorage.setItem('budget-cents-format', fmt);
     } catch (e) {
       console.error(e);
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('steady_broadcast_local_change'));
     }
   };
 

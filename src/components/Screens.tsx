@@ -3811,9 +3811,9 @@ export function Settings({
   };
 
   const handleConnectAlreadyUse = () => {
-    const clean = alreadyUseInput.replace(/\s+/g, '');
+    const clean = alreadyUseInput.replace(/\D/g, '').slice(0, 6);
     if (!clean || clean.length < 6) {
-      showToast('Please enter the 6-digit code.');
+      showToast('Please enter the full 6-digit code.');
       return;
     }
 
