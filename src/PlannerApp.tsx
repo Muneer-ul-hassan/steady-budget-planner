@@ -72,15 +72,22 @@ export default function PlannerApp() {
   // Live Sync across paired devices
   useEffect(() => {
     liveSync.init();
-    const handleRemoteUpdate = () => {
+    const handleRemoteUpdate = (evt: any) => {
+      const p = evt?.detail;
       const bal = readStorage('budget-starting-balance', 1319);
       setStartingBalanceState(bal);
+      const m = readStorage('budget-mode', 'custom');
+      setMode(m);
+      const bv = readStorage('budget-banner-visible', false);
+      setShowBanner(bv);
       const pal = (localStorage.getItem('budget-palette') as PaletteId) || 'sage';
       setPaletteState(pal);
       const th = (localStorage.getItem('budget-theme') as any) || 'light';
       setTheme(th);
       const tit = localStorage.getItem('budget-planner-title') || 'ADHD Planner';
       setPlannerTitleState(tit);
+      const un = localStorage.getItem('budget-user-name') || 'Alex';
+      setUserNameState(un);
     };
     window.addEventListener('steady_data_updated', handleRemoteUpdate);
     return () => window.removeEventListener('steady_data_updated', handleRemoteUpdate);

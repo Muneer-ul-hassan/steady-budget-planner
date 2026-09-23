@@ -10,6 +10,9 @@ export interface SyncPayload {
   userName: string;
   startingBalance: number;
   theme?: string;
+  palette?: string;
+  mode?: string;
+  bannerVisible?: boolean;
   currency?: string;
   currencyPosition?: 'left' | 'right';
   centsFormat?: '.00' | ',00' | 'none';
@@ -96,6 +99,8 @@ export async function createPlannerSnapshot(): Promise<SyncPayload> {
   const centsFormat = (localStorage.getItem('steady_cents_format') || localStorage.getItem('budget-cents-format') || '.00') as '.00' | ',00' | 'none';
   const kinds = JSON.parse(localStorage.getItem('budget-kinds-list') || '["Coffee","Food","Groceries","Gas","Transit","Fun","Other"]');
   const activePlannerId = localStorage.getItem(ACTIVE_PLANNER_KEY) || 'default';
+  const mode = localStorage.getItem('budget-mode') || 'custom';
+  const bannerVisible = localStorage.getItem('budget-banner-visible') === 'true';
 
   return {
     version: 1,
@@ -106,6 +111,8 @@ export async function createPlannerSnapshot(): Promise<SyncPayload> {
     startingBalance,
     theme,
     palette,
+    mode,
+    bannerVisible,
     currency,
     currencyPosition,
     centsFormat,
@@ -225,6 +232,14 @@ export async function applyPlannerSnapshot(payload: SyncPayload): Promise<void> 
   }
   if (payload.kinds) {
     localStorage.setItem('budget-kinds-list', JSON.stringify(payload.kinds));
+  }
+  if (payload.mode) {
+    localStorage.setItem('budget-mode', payload.mode);
+  } else if ((payload.spends && payload.spends.length > 0) || payload.startingBalance) {
+    localStorage.setItem('budget-mode', 'custom');
+  }
+  if (payload.bannerVisible !== undefined) {
+    localStorage.setItem('budget-banner-visible', JSON.stringify(payload.bannerVisible));
   }
   localStorage.setItem('budget-last-sync-time', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
 

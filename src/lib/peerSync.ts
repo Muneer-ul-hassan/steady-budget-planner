@@ -112,6 +112,31 @@ async function extractSnapshotFromEvent(data: any): Promise<SyncPayload | null> 
 }
 
 // ──────────────────────────────────────────────
+function computeSnapshotHash(snapshot: SyncPayload): string {
+  try {
+    return JSON.stringify({
+      bal: snapshot.startingBalance,
+      tit: snapshot.plannerTitle,
+      usr: snapshot.userName,
+      cur: snapshot.currency,
+      pos: snapshot.currencyPosition,
+      cft: snapshot.centsFormat,
+      thm: snapshot.theme,
+      pal: snapshot.palette,
+      mod: snapshot.mode,
+      spends: (snapshot.spends || []).map((s: any) => `${s.id}:${s.amount}:${s.category || ''}:${s.date || ''}`).sort(),
+      bills: (snapshot.bills || []).map((b: any) => `${b.id}:${b.amount}:${b.paid ? 1 : 0}`).sort(),
+      goals: (snapshot.goals || []).map((g: any) => `${g.id}:${g.saved || 0}:${g.target || 0}`).sort(),
+      debts: (snapshot.debts || []).map((d: any) => `${d.id}:${d.amount || d.balance || 0}`).sort(),
+      envelopes: (snapshot.envelopes || []).map((e: any) => `${e.id}:${e.spent || 0}:${e.budget || 0}`).sort(),
+      income: (snapshot.income || []).map((i: any) => `${i.id}:${i.amount}`).sort(),
+    });
+  } catch {
+    return '';
+  }
+}
+
+// ──────────────────────────────────────────────
 // LiveSyncManager (Permanent Cross-Device Sync)
 // ──────────────────────────────────────────────
 
@@ -120,6 +145,9 @@ class LiveSyncManager {
   private pairedCode: string | null = null;
   private debounceTimer: any = null;
   private isApplyingRemote = false;
+  private lastReceivedHash = '';
+  private lastSentHash = '';
+  private activeTopic: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -131,7 +159,7 @@ class LiveSyncManager {
 
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          this.ensureConnected();
+          this.reconnect();
         }
       });
     }
@@ -150,6 +178,17 @@ class LiveSyncManager {
     const clean = code.replace(/\D/g, '').slice(0, 6);
     this.pairedCode = clean;
     localStorage.setItem('steady_paired_code', clean);
+    this.reconnect();
+  }
+
+  public reconnect() {
+    if (this.eventSource) {
+      try {
+        this.eventSource.close();
+      } catch {}
+      this.eventSource = null;
+    }
+    this.activeTopic = null;
     this.ensureConnected();
   }
 
@@ -158,13 +197,20 @@ class LiveSyncManager {
     const code = this.pairedCode || localStorage.getItem('steady_paired_code');
     if (!code) return;
 
-    if (this.eventSource && this.eventSource.readyState !== EventSource.CLOSED) {
-      return; // already connected
+    const topic = getSyncTopic(code);
+    if (this.eventSource && this.activeTopic === topic && this.eventSource.readyState !== EventSource.CLOSED) {
+      return; // already active on correct topic
+    }
+
+    if (this.eventSource) {
+      try { this.eventSource.close(); } catch {}
+      this.eventSource = null;
     }
 
     try {
-      const topic = getSyncTopic(code);
-      this.eventSource = new EventSource(`${RELAY_BASE}/${topic}/sse`);
+      this.activeTopic = topic;
+      // Connect with ?since=10m so updates while phone was locked are delivered immediately
+      this.eventSource = new EventSource(`${RELAY_BASE}/${topic}/sse?since=10m`);
 
       this.eventSource.onmessage = async (evt) => {
         try {
@@ -182,6 +228,12 @@ class LiveSyncManager {
 
           const snapshot = await extractSnapshotFromEvent(raw);
           if (snapshot) {
+            const hash = computeSnapshotHash(snapshot);
+            if (hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
+              return; // identical data already applied or sent
+            }
+
+            this.lastReceivedHash = hash;
             this.isApplyingRemote = true;
             try {
               await applyPlannerSnapshot(snapshot);
@@ -190,7 +242,7 @@ class LiveSyncManager {
             } finally {
               setTimeout(() => {
                 this.isApplyingRemote = false;
-              }, 600);
+              }, 800);
             }
           }
         } catch (e) {
@@ -212,11 +264,18 @@ class LiveSyncManager {
     if (!code) return;
 
     clearTimeout(this.debounceTimer);
-    const delay = immediate ? 0 : 400;
+    const delay = immediate ? 0 : 500;
 
     this.debounceTimer = setTimeout(async () => {
       try {
         const snapshot = await createPlannerSnapshot();
+        const hash = computeSnapshotHash(snapshot);
+        // Do not broadcast if identical to what we just received from peer or sent previously
+        if (hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
+          return;
+        }
+
+        this.lastSentHash = hash;
         const topic = getSyncTopic(code);
         await sendSnapshotMessage(topic, 'LIVE_UPDATE', snapshot);
         const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -230,6 +289,11 @@ class LiveSyncManager {
   public broadcast(snapshot: SyncPayload) {
     const code = this.pairedCode || localStorage.getItem('steady_paired_code');
     if (!code) return;
+    const hash = computeSnapshotHash(snapshot);
+    if (hash && (hash === this.lastReceivedHash || hash === this.lastSentHash)) {
+      return;
+    }
+    this.lastSentHash = hash;
     const topic = getSyncTopic(code);
     sendSnapshotMessage(topic, 'LIVE_UPDATE', snapshot).catch((e) => {
       console.warn('Direct broadcast error:', e);
@@ -242,6 +306,9 @@ class LiveSyncManager {
       this.eventSource = null;
     }
     this.pairedCode = null;
+    this.activeTopic = null;
+    this.lastReceivedHash = '';
+    this.lastSentHash = '';
     localStorage.removeItem('steady_paired_code');
   }
 }
