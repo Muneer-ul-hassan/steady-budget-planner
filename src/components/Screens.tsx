@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { ArrowDownToLine, CalendarDays, Check, ChevronRight, CircleHelp, Copy, ExternalLink, Flag, Gauge, KeyRound, Keyboard, Laptop, ListChecks, Lock, Mail, MoreHorizontal, Plus, RotateCcw, Settings2, ShieldCheck, Smartphone, Target, Wallet, X } from "lucide-react";
 import { useTranslation } from "../lib/i18n";
 import { useCurrency } from "../lib/currency";
@@ -17,6 +17,7 @@ import {
   deletePlannerProfile,
   syncEngine,
 } from "../lib/syncEngine";
+import { HostSession, GuestSession, generatePeerSyncCode, liveSync } from "../lib/peerSync";
 
 export function Today({
   spends,
@@ -3655,6 +3656,10 @@ export function Settings({
   const [showEraseConfirm, setShowEraseConfirm] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
+  // PeerJS session refs (cross-device sync)
+  const hostSessionRef = useRef<HostSession | null>(null);
+  const guestSessionRef = useRef<GuestSession | null>(null);
+
   // Multi-planner profiles (up to 4 planners)
   const [planners, setPlanners] = useState<PlannerProfile[]>(() => getPlannerProfiles());
   const [showAddPlannerModal, setShowAddPlannerModal] = useState(false);
@@ -3753,88 +3758,98 @@ export function Settings({
   }, [syncCode]);
 
   const handleOpenConnectModal = () => {
-    const newCode = generateSyncCode();
-    const newCheck = generateCheckNumber();
+    // Destroy any existing host session
+    hostSessionRef.current?.destroy();
+    hostSessionRef.current = null;
+
+    const newCode = generatePeerSyncCode();
     setSyncCode(newCode);
-    setCheckNumber(newCheck);
+    setCheckNumber('');
     setCountdown(600);
     setPairRequestDetected(false);
     setPairSuccess(false);
     setShowConnectModal(true);
 
-    const session = {
-      code: newCode.display,
-      cleanCode: newCode.clean,
-      checkNumber: newCheck,
-      expiresAt: Date.now() + 600 * 1000,
-      status: 'waiting',
-    };
-    localStorage.setItem('steady_sync_active_session', JSON.stringify(session));
-    syncEngine.broadcast('SESSION_OPENED', session);
+    const host = new HostSession();
+    hostSessionRef.current = host;
+
+    host.start(
+      newCode.clean,
+      () => {
+        // Peer registered — code is now active
+      },
+      (digits) => {
+        // Guest connected — show check digits
+        setCheckNumber(digits);
+        setPairRequestDetected(true);
+      },
+      (errMsg) => {
+        showToast('❌ ' + errMsg);
+        // Re-generate code on ID collision
+        if (errMsg.includes('already in use')) {
+          handleOpenConnectModal();
+        }
+      }
+    );
   };
 
-  const handleAllowDevice = async () => {
-    const snapshot = await createPlannerSnapshot();
-    syncEngine.broadcast('DEVICE_PAYLOAD_AVAILABLE', {
-      cleanCode: syncCode.clean,
-      checkNumber,
-      snapshot,
+  const handleAllowDevice = () => {
+    const host = hostSessionRef.current;
+    if (!host) {
+      showToast('❌ No active connection. Please start again.');
+      return;
+    }
+    host.allow(() => {
+      setPairSuccess(true);
+      showToast('✓ Device connected! Planner synced.');
+      setTimeout(() => {
+        setShowConnectModal(false);
+        setPairSuccess(false);
+        setPairRequestDetected(false);
+      }, 1500);
     });
-    syncEngine.broadcast('DEVICE_SYNC_CONFIRMED', {
-      cleanCode: syncCode.clean,
-    });
-    localStorage.setItem('steady_sync_relay_payload', JSON.stringify(snapshot));
-    setPairSuccess(true);
-    showToast('✓ Device connected! Planner synced.');
-    setTimeout(() => {
-      setShowConnectModal(false);
-      setPairSuccess(false);
-      setPairRequestDetected(false);
-    }, 2200);
   };
 
-  const handleConnectAlreadyUse = async () => {
+  const handleConnectAlreadyUse = () => {
     const clean = alreadyUseInput.replace(/\s+/g, '');
     if (!clean || clean.length < 6) {
       showToast('Please enter the 6-digit code.');
       return;
     }
 
-    const rawSession = localStorage.getItem('steady_sync_active_session');
-    if (rawSession) {
-      try {
-        const session = JSON.parse(rawSession);
-        if (session.cleanCode === clean && session.expiresAt > Date.now()) {
-          setAlreadyUsePendingCheck(session.checkNumber);
-          syncEngine.broadcast('DEVICE_PAIR_REQUEST', {
-            cleanCode: clean,
-            checkNumber: session.checkNumber,
-            deviceName: 'Connected Browser',
-          });
+    // Destroy any previous temporary session
+    guestSessionRef.current?.destroy();
+    guestSessionRef.current = null;
 
-          const snapshot = await createPlannerSnapshot();
-          await applyPlannerSnapshot(snapshot);
-          setAlreadyUseSuccess(true);
-          showToast('✓ Connected! Synchronized with your other device.');
-          setTimeout(() => {
-            setShowAlreadyUseModal(false);
-            setAlreadyUseSuccess(false);
-            setAlreadyUsePendingCheck(null);
-            window.location.reload();
-          }, 1800);
-          return;
-        }
-      } catch (e) {
-        console.error(e);
+    setAlreadyUsePendingCheck('Connecting…');
+    showToast('Looking for your other device…');
+
+    const guest = new GuestSession();
+    guestSessionRef.current = guest;
+
+    guest.join(
+      clean,
+      (digits) => {
+        // Got check digits from host — show them
+        setAlreadyUsePendingCheck(digits);
+      },
+      (_snapshot) => {
+        // Immediately clear the pending check box so phone is not stuck
+        setAlreadyUsePendingCheck(null);
+        setAlreadyUseSuccess(true);
+        showToast('✓ Connected! Your planner is now synced.');
+        setTimeout(() => {
+          setShowAlreadyUseModal(false);
+          setAlreadyUseSuccess(false);
+        }, 1500);
+      },
+      (errMsg) => {
+        setAlreadyUsePendingCheck(null);
+        showToast('❌ ' + errMsg);
+        guestSessionRef.current?.destroy();
+        guestSessionRef.current = null;
       }
-    }
-
-    syncEngine.broadcast('DEVICE_PAIR_REQUEST', {
-      cleanCode: clean,
-      deviceName: navigator.userAgent.includes('Mobile') ? 'Phone' : 'Computer',
-    });
-    setAlreadyUsePendingCheck('Checking…');
-    showToast('Connecting to your other device…');
+    );
   };
 
   const handleRestoreRecoveryKey = async () => {
@@ -3843,6 +3858,7 @@ export function Settings({
       showToast('Please enter your 20-character recovery key.');
       return;
     }
+    // Try to restore from local backup snapshot (same-device recovery)
     const lastBackup = localStorage.getItem('steady_last_backup_data');
     if (lastBackup) {
       try {
@@ -3856,13 +3872,16 @@ export function Settings({
         console.error(e);
       }
     }
-    showToast('✓ Key verified! Planner restored.');
+    // On a new device there is no local backup — the key alone cannot restore data.
+    // Direct the user to use their backup file instead.
+    showToast('Key verified. To restore on a new device, use Settings → Restore your backup file.');
     setShowAlreadyUseModal(false);
   };
 
   const handleSyncNow = async () => {
     const snapshot = await createPlannerSnapshot();
     syncEngine.broadcast('SYNC_NOW', snapshot);
+    liveSync.queueBroadcast(true);
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setLastSyncTime(now);
     localStorage.setItem('budget-last-sync-time', now);
@@ -3870,6 +3889,7 @@ export function Settings({
   };
 
   const handleStopSync = () => {
+    liveSync.disconnectAll();
     setSyncStatus('paused');
     localStorage.setItem('budget-sync-status', 'paused');
     showToast('Syncing paused on this device.');
@@ -4014,24 +4034,7 @@ export function Settings({
   // Backup & Export Handlers
   const handleDownloadBackup = async () => {
     try {
-      const backupData = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        startingBalance,
-        theme,
-        userName,
-        plannerTitle,
-        kinds,
-        currency,
-        currencyPosition,
-        centsFormat,
-        spends: await db.spends.toArray(),
-        bills: await db.bills.toArray(),
-        goals: await db.goals.toArray(),
-        debts: await db.debts.toArray(),
-        envelopes: await db.envelopes.toArray(),
-        income: await db.income.toArray(),
-      };
+      const backupData = await createPlannerSnapshot();
       const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -4050,7 +4053,7 @@ export function Settings({
     try {
       const spendsData = await db.spends.toArray();
       let csv = 'Date,Category,Amount,Note\n';
-      spendsData.forEach((s) => {
+      spendsData.forEach((s: any) => {
         csv += `"${s.date || ''}","${s.category || ''}",${s.amount || 0},"${(s.note || '').replace(/"/g, '""')}"\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -4075,36 +4078,40 @@ export function Settings({
       try {
         const text = evt.target?.result as string;
         const data = JSON.parse(text);
-        if (data.spends) {
-          await db.spends.clear();
-          await db.spends.bulkAdd(data.spends);
+
+        if (data.spends || data.version) {
+          // Steady Planner snapshot format
+          await applyPlannerSnapshot(data);
+        } else if (data.profile || data.transactions) {
+          // Original Etsy app backup format compatibility
+          const mapped: any = {
+            version: 1,
+            timestamp: Date.now(),
+            plannerId: 'default',
+            plannerTitle: data.profile?.title || 'ADHD Planner',
+            userName: data.profile?.name || 'Alex',
+            startingBalance: Number(data.profile?.startingBalance || data.profile?.balance || 0),
+            theme: data.profile?.theme === 'midnight' ? 'dark' : 'light',
+            palette: 'sage',
+            currency: data.profile?.currency || '$',
+            currencyPosition: data.profile?.currencyPosition || 'left',
+            centsFormat: data.profile?.centsFormat || '.00',
+            kinds: data.profile?.kinds || ["Coffee","Food","Groceries","Gas","Transit","Fun","Other"],
+            spends: data.transactions || [],
+            bills: data.bills || [],
+            goals: data.goals || [],
+            debts: data.debts || [],
+            envelopes: data.envelopes || [],
+            income: data.moneyIn || data.income || [],
+          };
+          await applyPlannerSnapshot(mapped);
+        } else {
+          throw new Error('Unrecognized backup JSON format');
         }
-        if (data.bills) {
-          await db.bills.clear();
-          await db.bills.bulkAdd(data.bills);
-        }
-        if (data.goals) {
-          await db.goals.clear();
-          await db.goals.bulkAdd(data.goals);
-        }
-        if (data.debts) {
-          await db.debts.clear();
-          await db.debts.bulkAdd(data.debts);
-        }
-        if (data.envelopes) {
-          await db.envelopes.clear();
-          await db.envelopes.bulkAdd(data.envelopes);
-        }
-        if (data.income) {
-          await db.income.clear();
-          await db.income.bulkAdd(data.income);
-        }
-        if (data.startingBalance !== undefined) {
-          setStartingBalance(Number(data.startingBalance));
-        }
-        if (data.userName) handleNameChange(data.userName);
-        if (data.plannerTitle) handleTitleChange(data.plannerTitle);
-        showToast('✓ File restored successfully! Everything is refreshed.');
+
+        showToast('✓ File restored successfully! All data and settings are back.');
+        // Reload after a short delay so all state settles
+        setTimeout(() => window.location.reload(), 1200);
       } catch (err) {
         console.error(err);
         showToast('❌ Invalid backup JSON file.');
@@ -5069,7 +5076,7 @@ export function Settings({
         </p>
 
         <div className="settings-quote-callout">
-          "Zero is a goal. No shame, just information — the money was already spent or owed."
+          "A debt with an end date is a smaller thing than a number with no end. This planner never tells you off for having debt."
         </div>
       </section>
 
@@ -5362,6 +5369,22 @@ export function Settings({
                       if (e.key === 'Enter') handleRestoreRecoveryKey();
                     }}
                   />
+
+                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                    <p className="settings-field-desc" style={{ marginBottom: '8px' }}>
+                      Or have a backup file saved from your computer or phone?
+                    </p>
+                    <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <ArrowDownToLine size={14} />
+                      Restore your backup file (.json)
+                      <input
+                        type="file"
+                        accept=".json"
+                        style={{ display: 'none' }}
+                        onChange={handleRestoreFile}
+                      />
+                    </label>
+                  </div>
 
                   <div className="modal-actions" style={{ marginTop: '20px' }}>
                     <button

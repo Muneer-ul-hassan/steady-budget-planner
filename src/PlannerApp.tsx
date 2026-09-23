@@ -7,6 +7,7 @@ import { InfoBadge, IconButton, SeedBanner, SpendPanel, GoalMini, Sidebar, Topba
 import { Today, Month, Bills, Goals, Income as IncomeScreen, Debt as DebtScreen, Envelopes as EnvelopesScreen, Milestones, Settings, Help } from "./components/Screens";
 import { useTranslation } from "./lib/i18n";
 import { useCurrency } from "./lib/currency";
+import { liveSync } from "./lib/peerSync";
 
 export default function PlannerApp() {
   const { t } = useTranslation();
@@ -67,6 +68,29 @@ export default function PlannerApp() {
   useEffect(() => {
     document.title = plannerTitle || 'ADHD Planner';
   }, [plannerTitle]);
+
+  // Live Sync across paired devices
+  useEffect(() => {
+    liveSync.init();
+    const handleRemoteUpdate = () => {
+      const bal = readStorage('budget-starting-balance', 1319);
+      setStartingBalanceState(bal);
+      const pal = (localStorage.getItem('budget-palette') as PaletteId) || 'sage';
+      setPaletteState(pal);
+      const th = (localStorage.getItem('budget-theme') as any) || 'light';
+      setTheme(th);
+      const tit = localStorage.getItem('budget-planner-title') || 'ADHD Planner';
+      setPlannerTitleState(tit);
+    };
+    window.addEventListener('steady_data_updated', handleRemoteUpdate);
+    return () => window.removeEventListener('steady_data_updated', handleRemoteUpdate);
+  }, []);
+
+  // Broadcast local changes to paired device automatically
+  useEffect(() => {
+    liveSync.queueBroadcast();
+  }, [spends, goals, bills, income, debts, envelopes, startingBalance, plannerTitle, palette, theme]);
+
   useEffect(() => {
     const f = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCommand(true); }

@@ -123,21 +123,55 @@ export async function createPlannerSnapshot(): Promise<SyncPayload> {
 export async function applyPlannerSnapshot(payload: SyncPayload): Promise<void> {
   if (!payload) return;
 
-  await Promise.all([
-    db.spends.clear(),
-    db.bills.clear(),
-    db.goals.clear(),
-    db.debts.clear(),
-    db.envelopes.clear(),
-    db.income.clear(),
-  ]);
+  try {
+    await db.transaction('rw', [db.spends, db.bills, db.goals, db.debts, db.envelopes, db.income], async () => {
+      await db.spends.clear();
+      await db.bills.clear();
+      await db.goals.clear();
+      await db.debts.clear();
+      await db.envelopes.clear();
+      await db.income.clear();
 
-  if (payload.spends && payload.spends.length > 0) await db.spends.bulkAdd(payload.spends);
-  if (payload.bills && payload.bills.length > 0) await db.bills.bulkAdd(payload.bills);
-  if (payload.goals && payload.goals.length > 0) await db.goals.bulkAdd(payload.goals);
-  if (payload.debts && payload.debts.length > 0) await db.debts.bulkAdd(payload.debts);
-  if (payload.envelopes && payload.envelopes.length > 0) await db.envelopes.bulkAdd(payload.envelopes);
-  if (payload.income && payload.income.length > 0) await db.income.bulkAdd(payload.income);
+      if (Array.isArray(payload.spends) && payload.spends.length > 0) {
+        await db.spends.bulkAdd(payload.spends.map((s: any) => ({ ...s })));
+      }
+      if (Array.isArray(payload.bills) && payload.bills.length > 0) {
+        await db.bills.bulkAdd(payload.bills.map((b: any) => ({ ...b })));
+      }
+      if (Array.isArray(payload.goals) && payload.goals.length > 0) {
+        await db.goals.bulkAdd(payload.goals.map((g: any) => ({ ...g })));
+      }
+      if (Array.isArray(payload.debts) && payload.debts.length > 0) {
+        await db.debts.bulkAdd(payload.debts.map((d: any) => ({ ...d })));
+      }
+      if (Array.isArray(payload.envelopes) && payload.envelopes.length > 0) {
+        await db.envelopes.bulkAdd(payload.envelopes.map((e: any) => ({ ...e })));
+      }
+      if (Array.isArray(payload.income) && payload.income.length > 0) {
+        await db.income.bulkAdd(payload.income.map((i: any) => ({ ...i })));
+      }
+    });
+  } catch (err) {
+    console.warn('Dexie bulk transaction fallback:', err);
+    try {
+      await Promise.all([
+        db.spends.clear(),
+        db.bills.clear(),
+        db.goals.clear(),
+        db.debts.clear(),
+        db.envelopes.clear(),
+        db.income.clear(),
+      ]);
+      for (const s of payload.spends || []) { try { await db.spends.put({ ...s }); } catch {} }
+      for (const b of payload.bills || []) { try { await db.bills.put({ ...b }); } catch {} }
+      for (const g of payload.goals || []) { try { await db.goals.put({ ...g }); } catch {} }
+      for (const d of payload.debts || []) { try { await db.debts.put({ ...d }); } catch {} }
+      for (const e of payload.envelopes || []) { try { await db.envelopes.put({ ...e }); } catch {} }
+      for (const i of payload.income || []) { try { await db.income.put({ ...i }); } catch {} }
+    } catch (e2) {
+      console.error('Fallback put error:', e2);
+    }
+  }
 
   if (payload.startingBalance !== undefined) {
     localStorage.setItem('budget-starting-balance', JSON.stringify(payload.startingBalance));
@@ -172,6 +206,10 @@ export async function applyPlannerSnapshot(payload: SyncPayload): Promise<void> 
     localStorage.setItem('budget-kinds-list', JSON.stringify(payload.kinds));
   }
   localStorage.setItem('budget-last-sync-time', new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('steady_data_updated', { detail: payload }));
+  }
 }
 
 // Multi-Planner Profile Management (up to 4 planners)
